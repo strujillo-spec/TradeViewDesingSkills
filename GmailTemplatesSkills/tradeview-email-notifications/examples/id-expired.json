@@ -1,0 +1,31 @@
+{
+  "subject": "Your submitted ID is expired",
+  "preheader": "Please upload a valid ID in Cabinet.",
+  "blocks": [
+    {
+      "type": "icon",
+      "name": "clipboard-clock",
+      "alt": "Action required"
+    },
+    {
+      "type": "title",
+      "text": "Your submitted ID is expired"
+    },
+    {
+      "type": "greeting"
+    },
+    {
+      "type": "paragraph",
+      "text": "The ID you submitted to Tradeview has expired. Please upload a valid one through Cabinet. <strong>You can do this now or within the next 30 days.</strong>"
+    },
+    {
+      "type": "paragraph",
+      "text": "Until your document is updated, you won't be able to transfer, withdraw or deposit funds."
+    },
+    {
+      "type": "cta",
+      "label": "Go to Cabinet",
+      "href": "[cabinet_url]"
+    }
+  ]
+}

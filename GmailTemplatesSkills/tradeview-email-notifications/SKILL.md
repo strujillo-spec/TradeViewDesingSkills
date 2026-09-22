@@ -1,0 +1,64 @@
+---
+name: tradeview-email-notifications
+description: Crea correos transaccionales y de notificación de Tradeview Markets (Tradeview × EDGE) en HTML responsive listos para ESP, con su versión preview y PDF. Úsala siempre que el usuario pida un correo, email, notificación, plantilla de correo o "mail" de Tradeview — verificación de documentos (ID, proof of address), retiros, depósitos, cuentas nuevas, avisos del Cabinet — ya sea desde una maqueta/imagen o desde una descripción del caso ("correo de retiro rechazado", "email de documento vencido"). También cuando pida cambiar, corregir o agregar correos existentes de Tradeview, preparar la entrega a devs, o pregunte por qué no se ven los logos de un correo.
+---
+
+# Correos de notificación · Tradeview Markets
+
+Genera correos que cumplen el design system de Tradeview: header negro con logo a color, body `#080B18`, footer negro con redes y legales, contenedor de 600px sobre fondo `#272336`, responsive a 480px. El trabajo pesado (plantilla, footer, assets, variantes, PDF) lo hace `scripts/build_email.py`; tu trabajo es traducir la maqueta o el pedido a un **spec JSON** correcto y entregar bien.
+
+## Flujo
+
+1. **Entender el correo.** Si hay maqueta (imagen), léela con atención: icono, título (y dónde corta la línea), párrafos exactos, card, CTA. Si solo hay descripción, arma el contenido siguiendo el catálogo de `examples/` y el tono de los correos existentes (inglés, directo, cordial). Si falta algo que cambia el resultado (texto del CTA, a qué URL va, qué datos lleva la card), pregunta — una sola pregunta, lo más concreta posible.
+2. **Leer las reglas** cuando haya duda de diseño: `references/design-rules.md`. Si el proyecto tiene un `design-system.md`, léelo también.
+3. **Escribir el spec** en `/home/claude/specs/<slug>.json` siguiendo `references/spec-format.md`. Parte de un ejemplo parecido en `examples/` en lugar de empezar de cero.
+4. **Construir:**
+   ```bash
+   cd <ruta-de-esta-skill>
+   pip install cairosvg --break-system-packages -q   # solo si vas a regenerar assets
+   python scripts/build_email.py /home/claude/specs/*.json --out /home/claude/tradeview-emails --screenshots
+   ```
+   Si el usuario ya dio la URL pública de las imágenes, añade `--asset-base https://…/`.
+5. **Verificar visualmente** los screenshots a 600 y 390 px (`view`) contra la maqueta: textos, cortes de línea, espaciados, icono correcto. Corrige el spec y reconstruye si algo no coincide. Revisa los avisos del script (orden de bloques, CTA duplicado, peso, variables).
+6. **Entregar** (ver abajo).
+
+## Entrega
+
+Copia la carpeta de salida a `/mnt/user-data/outputs/tradeview-emails/` (sin `screenshots/`), crea un zip de ella y presenta con `present_files`, en este orden: los PDF, los HTML de `preview/`, y el zip. Estos correos son archivos para el ESP del usuario: no los publiques como artifact.
+
+En el mensaje, en español y sin jerga, explica brevemente:
+- **PDF** → para compartir y aprobar; se abre en cualquier lado.
+- **Preview** → el correo en el navegador, aunque se descargue suelto; no sirve para enviar.
+- **Producción** (dentro del zip) → lo que se pasa a los devs; necesita la carpeta `assets/` al lado y, para enviarse de verdad, subir las imágenes a un servidor y usar esa URL.
+- Cualquier diferencia entre la maqueta y el design system que hayas resuelto siguiendo la maqueta.
+- Las variables que quedan para reemplazar en el ESP.
+
+Para dudas del tipo "no se ven los logos", "cómo lo mando", "qué hago con esto", "se lo paso a los devs" → `references/delivery-and-handoff.md` (incluye la plantilla de nota de entrega para devs).
+
+## Reglas que no se negocian
+
+- Estructura, colores y footer vienen del script — no escribas HTML de correo a mano ni cambies la plantilla por un correo puntual. Si el usuario pide un cambio **global** (afecta a todos los correos), edita `build_email.py` y reconstruye todos los correos afectados.
+- Un solo CTA por correo, color `#EB0052`. Links en `#A898FB`.
+- Icono de éxito en verde `#3ED47A`; todos los demás iconos de estado en lila `#A898FB`.
+- Producción usa PNG @2x con `alt`, nunca SVG. Preview usa SVG incrustado. Ambos salen del script.
+- El texto de la maqueta se copia exacto. No inventes variables ni datos legales.
+- Si la maqueta contradice el design system, sigue la maqueta y avisa. No edites el `design-system.md` salvo que el usuario lo pida.
+
+## Agregar un icono de estado
+
+1. Crea `assets/svg/icon-<nombre>.svg` (viewBox 24×24, estilo outline trazo ~1.8, color `#A898FB`; verde `#3ED47A` solo si significa éxito).
+2. Copia la skill a un directorio escribible si está en solo lectura, y corre `python scripts/build_assets.py` para generar el PNG @2x.
+3. Úsalo en el spec con `{"type":"icon","name":"<nombre>"}`.
+
+Lo mismo aplica si el usuario entrega un logo nuevo: reemplaza el SVG en `assets/svg/` con el mismo nombre (`tradeview-color.svg`, `tradeview-white.svg`, `edge-white.svg`) y regenera. Antes de reemplazar, compara con el existente: si es idéntico, díselo al usuario en vez de "cambiarlo".
+
+## Contenido de la skill
+
+- `scripts/build_email.py` — spec JSON → produccion/ + preview/ + pdf/ + ABRIR-AQUI.html + LEEME.txt
+- `scripts/build_assets.py` — regenera `assets/png/` desde `assets/svg/`
+- `assets/svg/` — logos oficiales, iconos de estado, redes (fuente)
+- `assets/png/` — versiones @2x para producción
+- `examples/` — specs de los correos ya aprobados (proof of address ×3, withdrawal in progress, ID expired)
+- `references/spec-format.md` — todos los tipos de bloque
+- `references/design-rules.md` — tokens, medidas y decisiones de diseño
+- `references/delivery-and-handoff.md` — entregables, problemas frecuentes, pasos para devs, plantilla de handoff

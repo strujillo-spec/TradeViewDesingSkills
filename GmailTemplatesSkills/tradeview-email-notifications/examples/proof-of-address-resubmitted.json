@@ -1,0 +1,26 @@
+{
+  "subject": "The re-submission of your proof of address is complete",
+  "preheader": "Your updated proof of address is now under review.",
+  "blocks": [
+    {
+      "type": "icon",
+      "name": "check-circle",
+      "alt": "Completed"
+    },
+    {
+      "type": "title",
+      "text": "The re-submission of your <br class=\"hide-mobile\">proof of address is complete"
+    },
+    {
+      "type": "greeting"
+    },
+    {
+      "type": "paragraph",
+      "text": "You have successfully updated your proof of address in our system, and it is now under review. Thank you!"
+    },
+    {
+      "type": "paragraph",
+      "text": "If additional documentation is required, one of our customer support representatives will contact you."
+    }
+  ]
+}

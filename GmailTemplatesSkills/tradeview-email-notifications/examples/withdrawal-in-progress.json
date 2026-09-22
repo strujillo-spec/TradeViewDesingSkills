@@ -1,0 +1,65 @@
+{
+  "subject": "Withdrawal in progress",
+  "preheader": "We're reviewing your withdrawal request.",
+  "blocks": [
+    {
+      "type": "icon",
+      "name": "clock",
+      "alt": "In progress"
+    },
+    {
+      "type": "title",
+      "text": "Withdrawal in progress"
+    },
+    {
+      "type": "greeting"
+    },
+    {
+      "type": "pill",
+      "text": "We're reviewing your withdrawal request for <strong>(amount) (currency)</strong>."
+    },
+    {
+      "type": "paragraph",
+      "text": "This process may take up to <strong>24 hours of the next business day</strong>. We'll email you once the review is complete or if we need anything else from you.",
+      "margin_bottom": 32
+    },
+    {
+      "type": "details_card",
+      "title": "Withdrawal details",
+      "rows": [
+        [
+          "Amount:",
+          "[Amount]"
+        ],
+        [
+          "Account:",
+          "[Account]"
+        ],
+        [
+          "Platform:",
+          "[Platform]"
+        ],
+        [
+          "Withdrawal method:",
+          "[Withdrawal method]"
+        ],
+        [
+          "Request ID:",
+          "[Request ID]"
+        ],
+        [
+          "Associated email:",
+          "[Associated email]"
+        ],
+        [
+          "Date:",
+          "[Date]"
+        ],
+        [
+          "Status:",
+          "[Status]"
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "subject": "Submit a new proof of address",
+  "preheader": "Your proof of address didn't meet our requirements. Upload a new one in Cabinet.",
+  "blocks": [
+    {
+      "type": "icon",
+      "name": "clipboard-clock",
+      "alt": "Action required"
+    },
+    {
+      "type": "title",
+      "text": "Submit a new proof of address"
+    },
+    {
+      "type": "greeting"
+    },
+    {
+      "type": "paragraph",
+      "text": "Unfortunately, the proof of address document you submitted did not meet our safety and regulatory standard requirements, which include:"
+    },
+    {
+      "type": "list_card",
+      "items": [
+        "The document must be no older than 3 months",
+        "It should include your name",
+        "The address must match the one provided in your application",
+        "The document must not be a screenshot",
+        "It should not be cut off",
+        "There must be no blocked or masked information",
+        "The document must be in a translatable language"
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Please, upload a new proof of address file and make sure it meets the above criteria."
+    },
+    {
+      "type": "cta",
+      "label": "Go to Cabinet",
+      "href": "[cabinet_url]"
+    }
+  ]
+}
