@@ -29,7 +29,7 @@ No hace falta instalar todas las plataformas: cada quien instala solo la que usa
 
 | Carpeta | Skill | Qué hace |
 |---|---|---|
-| `GmailTemplatesSkills/` | `tradeview-email-notifications` | Genera correos transaccionales/de notificación de Tradeview (HTML responsive + preview + PDF) a partir de una maqueta o descripción. |
+| `GmailTemplatesSkills/` | `tradeview-email-notifications` | Genera correos transaccionales de Tradeview a partir de una maqueta, un link de Figma o una descripción, en 7 idiomas y para las entidades LTD y SAC. Entrega PDF, preview y HTML de producción con el estándar de desarrollo (tablas, CSS inline, S3, Jinja). |
 | `TradeViewLanging/` | — | Pendiente. |
 | `HubTradeSkill/` | — | Pendiente. |
 
@@ -49,6 +49,9 @@ Cada skill sigue esta convención:
 ├── cursor/                  ← adaptación como Cursor Project Rule (.mdc)
 └── openai/                  ← instrucciones para armar un Custom GPT
 ```
+
+Cada skill puede sumar carpetas propias. Por ejemplo, `tradeview-email-notifications` agrega
+`locales/` (textos y footers por idioma) y `delivery.json` (integración con el backend).
 
 `SKILL.md` es la fuente de verdad. Los adaptadores de `cursor/` y `openai/` son traducciones de
 ese mismo flujo a las capacidades de cada plataforma (ninguna de las dos tiene un formato de
