@@ -75,10 +75,10 @@ class Ctx:
 
 
 def img(ctx, name, w, h, alt, style="", display="block", fluid=False):
-    """<img> a {ASSET}<name>@2x.png. En preview se reemplaza por SVG inline. fluid: se encoge en pantallas angostas."""
-    ctx.pngs.add(f"{name}@2x.png")
+    """<img> a {ASSET}<name>-2x.png. En preview se reemplaza por SVG inline. fluid: se encoge en pantallas angostas."""
+    ctx.pngs.add(f"{name}-2x.png")
     size = f"width:100%;max-width:{w}px;" if fluid else f"width:{w}px;"
-    return (f'<img src="{{ASSET}}{name}@2x.png" data-svg="{name}" width="{w}" height="{h}" alt="{html.escape(alt)}" '
+    return (f'<img src="{{ASSET}}{name}-2x.png" data-svg="{name}" width="{w}" height="{h}" alt="{html.escape(alt)}" '
             f'style="display:{display};border:0;outline:none;text-decoration:none;{size}height:auto;{style}">')
 
 

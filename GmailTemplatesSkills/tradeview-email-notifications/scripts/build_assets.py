@@ -75,7 +75,7 @@ def main():
         if only and svg.stem not in only:
             continue
         w, h = size_for(svg.stem)
-        jobs.append((svg, PNG / f"{svg.stem}@2x.png", w, h))
+        jobs.append((svg, PNG / f"{svg.stem}-2x.png", w, h))
     try:
         render_cairo(jobs)
     except (ImportError, OSError):

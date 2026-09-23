@@ -67,10 +67,12 @@ de backend), hazlo en esta carpeta y después actualiza cada plataforma donde es
   ```bash
   cd GmailTemplatesSkills
   rm -f tradeview-email-notifications/tradeview-email-notifications.skill
-  zip -r /tmp/tv.skill tradeview-email-notifications \
+  zip -rD /tmp/tv.skill tradeview-email-notifications \
     -x 'tradeview-email-notifications/cursor/*' 'tradeview-email-notifications/openai/*' \
        'tradeview-email-notifications/INSTALL.md' 'tradeview-email-notifications/output/*' '*.DS_Store'
   mv /tmp/tv.skill tradeview-email-notifications/tradeview-email-notifications.skill
   ```
+  Claude.ai rechaza el paquete ("Zip file contains path with invalid characters") si algún archivo
+  tiene caracteres como `@`, espacios o tildes en el nombre. Usa solo letras, números, `-`, `_` y `.`.
 - **Claude Code / Cursor:** vuelve a copiar la carpeta (o haz `git pull` si la usas desde el repo).
 - **ChatGPT:** vuelve a armar `skill.zip` y reemplázalo en el GPT.
