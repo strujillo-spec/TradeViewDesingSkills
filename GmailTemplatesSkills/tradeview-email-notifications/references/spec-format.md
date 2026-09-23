@@ -19,10 +19,12 @@ bloque de ayuda/firma, More from Tradeview y footer — el spec solo describe el
   `<slug>-<lang>-<entity>.html`, ej. `deposit-confirmed-es-sac.html`.
 - `lang` (opcional, default `en`): `en` · `es` · `pt` · `ja` · `zh` · `ko` · `ar`. Tiene que existir
   `locales/<lang>.json`. `ar` se construye en RTL.
-- `entity` (opcional, default `ltd`): `ltd` (Tradeview Ltd.) o `sac` (Tradeview Financial Markets S.A.C.).
-  Solo cambia el footer legal.
+- `entity` (opcional, default `ltd`): `"ltd"` (Tradeview Ltd.), `"sac"` (Tradeview Financial Markets S.A.C.)
+  o `["ltd", "sac"]` para generar un archivo por entidad desde el mismo spec. Solo cambia el footer
+  legal. Siempre la indica el usuario.
 - `copy` (opcional): `"approved"` o `"draft"`. Default: `approved` en inglés (viene de Figma), `draft` en los
-  demás idiomas. Pásalo a `approved` solo cuando alguien del equipo aprobó ese texto. Un correo es
+  demás idiomas. Si el texto lo redactaste tú a partir de una tarea (y no viene de Figma ni de un
+  documento con el texto final), ponlo en `draft` aunque sea inglés. Pásalo a `approved` solo cuando alguien del equipo aprobó ese texto. Un correo es
   **borrador** si su `copy` o el `status` de `locales/<lang>.json` no están aprobados: el preview y el PDF
   muestran el aviso "BORRADOR" y **no se genera producción**.
 - La traducción **no tiene que ser literal**: cada idioma puede cambiar palabras, tono, orden y largo de

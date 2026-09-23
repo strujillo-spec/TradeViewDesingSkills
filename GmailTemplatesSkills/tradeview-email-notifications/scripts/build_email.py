@@ -571,11 +571,17 @@ def main():
         d.mkdir(parents=True, exist_ok=True)
     base = a.asset_base if a.asset_base.endswith("/") else a.asset_base + "/"
 
-    specs = []
+    jobs = []
     for sp in a.specs:
         sp = Path(sp)
-        spec = json.loads(sp.read_text())
-        spec.setdefault("slug", sp.stem.split(".")[0])
+        base_spec = json.loads(sp.read_text())
+        base_spec.setdefault("slug", sp.stem.split(".")[0])
+        ents = base_spec.get("entity", "ltd")
+        for ent in ents if isinstance(ents, list) else [ents]:  # "entity": ["ltd", "sac"] genera ambas
+            jobs.append((sp, {**base_spec, "entity": ent}))
+
+    specs = []
+    for sp, spec in jobs:
         spec["_name"] = name = out_name(spec)
         print(f"• {name}")
         doc, ctx = render(spec, sp.parent)

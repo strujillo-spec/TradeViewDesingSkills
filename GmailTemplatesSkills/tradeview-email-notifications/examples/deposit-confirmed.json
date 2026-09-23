@@ -1,4 +1,8 @@
 {
+  "entity": [
+    "ltd",
+    "sac"
+  ],
   "subject": "Deposit confirmation",
   "preheader": "Your deposit has been successfully credited to your account.",
   "blocks": [
