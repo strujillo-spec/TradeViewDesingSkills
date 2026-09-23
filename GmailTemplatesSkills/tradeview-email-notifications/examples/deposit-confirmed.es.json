@@ -1,0 +1,55 @@
+{
+  "slug": "deposit-confirmed",
+  "lang": "es",
+  "subject": "Confirmación de depósito",
+  "preheader": "Tu depósito se acreditó correctamente en tu cuenta.",
+  "blocks": [
+    {
+      "type": "icon",
+      "name": "check-circle",
+      "alt": "Depósito exitoso"
+    },
+    {
+      "type": "title",
+      "text": "Depósito exitoso"
+    },
+    {
+      "type": "greeting"
+    },
+    {
+      "type": "pill",
+      "variant": "success",
+      "text": "Tu depósito se acreditó correctamente en tu cuenta."
+    },
+    {
+      "type": "details_card",
+      "title": "Detalles del depósito",
+      "rows": [
+        [
+          "Monto:",
+          "[Amount]"
+        ],
+        [
+          "Cuenta:",
+          "[Account]"
+        ],
+        [
+          "ID de transacción:",
+          "[Transaction ID]"
+        ],
+        [
+          "Tipo de transacción:",
+          "[Transaction type]"
+        ],
+        [
+          "Estado:",
+          "[Status]"
+        ],
+        [
+          "Descripción:",
+          "[Description]"
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "subject": "Welcome to Tradeview Markets - Let's get you started!",
+  "preheader": "Your trading account is ready. Here are your account credentials.",
+  "more_from_tradeview": true,
+  "blocks": [
+    {
+      "type": "title",
+      "text": "Your trading account is ready"
+    },
+    {
+      "type": "subtitle",
+      "text": "Everything you need to get started"
+    },
+    {
+      "type": "greeting"
+    },
+    {
+      "type": "paragraph",
+      "text": "Your trading account is ready. Here are your account credentials:"
+    },
+    {
+      "type": "details_card",
+      "title": "Here are your essential account credentials. Keep them safe:",
+      "rows": [
+        [
+          "Account number:",
+          "[Account number]",
+          "copy"
+        ],
+        [
+          "Trading password:",
+          "[Trading password]",
+          "copy"
+        ],
+        [
+          "Investor password:",
+          "[Investor password]",
+          "copy"
+        ],
+        [
+          "Trading platform:",
+          "[Trading platform]"
+        ],
+        [
+          "Trading instrument:",
+          "[Trading instrument]"
+        ]
+      ]
+    },
+    {
+      "type": "alert",
+      "text": "Your trading platform ID and password will arrive in a separate email. Keep your login details private."
+    },
+    {
+      "type": "heading",
+      "text": "Get ready to trade"
+    },
+    {
+      "type": "note",
+      "icon": "apple",
+      "text": "If you&rsquo;re using MacOS or Linux, follow these installation instructions <a href=\"[install_guide_url]\">here</a>."
+    },
+    {
+      "type": "steps",
+      "items": [
+        {
+          "icon": "download",
+          "title": "Download your trading platform",
+          "downloads": [
+            {
+              "platform": "windows",
+              "href": "[mt4_windows_url]"
+            },
+            {
+              "platform": "macos",
+              "href": "[mt4_macos_url]"
+            },
+            {
+              "platform": "ios",
+              "href": "[mt4_ios_url]"
+            },
+            {
+              "platform": "android",
+              "href": "[mt4_android_url]"
+            }
+          ],
+          "footnote": "For optimal performance, remove any previous versions of MetaTrader software from your PC before installation."
+        },
+        {
+          "icon": "deposit",
+          "title": "Fund your account",
+          "text": "Deposit funds from your Cabinet."
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "label": "Go to your Cabinet",
+      "href": "[cabinet_url]"
+    }
+  ]
+}

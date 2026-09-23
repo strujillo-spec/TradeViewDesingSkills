@@ -1,0 +1,61 @@
+{
+  "subject": "Withdrawal declined",
+  "preheader": "Your withdrawal could not be completed.",
+  "blocks": [
+    {
+      "type": "icon",
+      "name": "ban",
+      "alt": "Declined"
+    },
+    {
+      "type": "title",
+      "text": "Withdrawal declined"
+    },
+    {
+      "type": "greeting"
+    },
+    {
+      "type": "pill",
+      "variant": "error",
+      "text": "Your withdrawal of <strong>(amount) (currency)</strong> could not be completed."
+    },
+    {
+      "type": "details_card",
+      "title": "Withdrawal details",
+      "rows": [
+        [
+          "Amount:",
+          "[Amount]"
+        ],
+        [
+          "Account:",
+          "[Account]"
+        ],
+        [
+          "Platform:",
+          "[Platform]"
+        ],
+        [
+          "Withdrawal method:",
+          "[Withdrawal method]"
+        ],
+        [
+          "Request ID:",
+          "[Request ID]"
+        ],
+        [
+          "Associated email:",
+          "[Associated email]"
+        ],
+        [
+          "Date:",
+          "[Date]"
+        ],
+        [
+          "Status:",
+          "[Status]"
+        ]
+      ]
+    }
+  ]
+}

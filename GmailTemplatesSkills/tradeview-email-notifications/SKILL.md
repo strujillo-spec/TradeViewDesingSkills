@@ -1,64 +1,81 @@
 ---
 name: tradeview-email-notifications
-description: Crea correos transaccionales y de notificación de Tradeview Markets (Tradeview × EDGE) en HTML responsive listos para ESP, con su versión preview y PDF. Úsala siempre que el usuario pida un correo, email, notificación, plantilla de correo o "mail" de Tradeview — verificación de documentos (ID, proof of address), retiros, depósitos, cuentas nuevas, avisos del Cabinet — ya sea desde una maqueta/imagen o desde una descripción del caso ("correo de retiro rechazado", "email de documento vencido"). También cuando pida cambiar, corregir o agregar correos existentes de Tradeview, preparar la entrega a devs, o pregunte por qué no se ven los logos de un correo.
+description: Crea correos transaccionales y de notificación de Tradeview Markets (Tradeview × EDGE) en HTML listo para el backend de Tradeview (tablas, CSS inline, imágenes en S3, variables Jinja), con su versión preview y PDF. Úsala siempre que el usuario pida un correo, email, notificación, plantilla de correo o "mail" de Tradeview — verificación de documentos (ID, proof of address), retiros, depósitos, cuentas nuevas, códigos OTP, credenciales de cuenta, avisos del Cabinet — en cualquier idioma (inglés, español, portugués, japonés, chino, coreano, árabe) y para Tradeview Ltd. o S.A.C., ya sea desde una maqueta/imagen, un link de Figma o desde una descripción del caso ("correo de retiro rechazado", "email de documento vencido"). También cuando pida cambiar, corregir o agregar correos existentes de Tradeview, preparar la entrega a devs, o pregunte por qué no se ven las imágenes de un correo.
 ---
 
 # Correos de notificación · Tradeview Markets
 
-Genera correos que cumplen el design system de Tradeview: header negro con logo a color, body `#080B18`, footer negro con redes y legales, contenedor de 600px sobre fondo `#272336`, responsive a 480px. El trabajo pesado (plantilla, footer, assets, variantes, PDF) lo hace `scripts/build_email.py`; tu trabajo es traducir la maqueta o el pedido a un **spec JSON** correcto y entregar bien.
+Genera correos que cumplen el design system de Tradeview (header negro con logo a color, body `#080B18`, footer negro con redes y legales, 750px fluido sobre fondo `#272336`) **y el estándar del equipo de desarrollo**: un solo HTML por correo, maquetado con tablas, CSS 100% inline (sin `<style>` ni flexbox), imágenes desde el bucket S3 y variables Jinja `{{ data['...'] }}`. El trabajo pesado (plantilla, footer, idiomas, RTL, S3, Jinja, PDF) lo hace `scripts/build_email.py`; tu trabajo es traducir la maqueta o el pedido a un **spec JSON por idioma** correcto y entregar bien.
+
+La fuente de verdad visual es el archivo de Figma **Emails** (`https://www.figma.com/design/yAI1PcA8Zkv9RFUua3RVz4/Emails?node-id=9178-473`), secciones New user / Live account, Active user y Footer — la sección Research no se usa. Si tienes acceso al MCP de Figma y el usuario comparte un nodo, léelo con `get_screenshot` / `get_design_context`; `references/design-rules.md` ya resume ese archivo.
 
 ## Flujo
 
-1. **Entender el correo.** Si hay maqueta (imagen), léela con atención: icono, título (y dónde corta la línea), párrafos exactos, card, CTA. Si solo hay descripción, arma el contenido siguiendo el catálogo de `examples/` y el tono de los correos existentes (inglés, directo, cordial). Si falta algo que cambia el resultado (texto del CTA, a qué URL va, qué datos lleva la card), pregunta — una sola pregunta, lo más concreta posible.
+1. **Entender el correo.** Si hay maqueta (imagen o nodo de Figma), léela con atención: icono, título (y dónde corta la línea), párrafos exactos, card, CTA. Si solo hay descripción, arma el contenido siguiendo el catálogo de `examples/` y el tono de los correos existentes (directo, cordial). Confirma **idiomas** y **entidad** (`ltd` por defecto; `sac` = Tradeview Financial Markets S.A.C., Perú). Si falta algo que cambia el resultado (texto del CTA, a qué URL va, qué datos lleva la card), pregunta — una sola pregunta, lo más concreta posible.
 2. **Leer las reglas** cuando haya duda de diseño: `references/design-rules.md`. Si el proyecto tiene un `design-system.md`, léelo también.
-3. **Escribir el spec** en `/home/claude/specs/<slug>.json` siguiendo `references/spec-format.md`. Parte de un ejemplo parecido en `examples/` en lugar de empezar de cero.
+3. **Escribir el spec** en `/home/claude/specs/<slug>[.<lang>].json` siguiendo `references/spec-format.md` — **un spec por idioma**, mismo `slug` y mismos bloques, cambiando solo `lang` y los textos. Parte de un ejemplo parecido en `examples/` en lugar de empezar de cero. Si traduces tú el copy, dilo en la entrega para que alguien del equipo lo revise.
 4. **Construir:**
    ```bash
    cd <ruta-de-esta-skill>
-   pip install cairosvg --break-system-packages -q   # solo si vas a regenerar assets
+   pip install cairosvg --break-system-packages -q   # solo si vas a regenerar assets (en macOS: playwright)
    python scripts/build_email.py /home/claude/specs/*.json --out /home/claude/tradeview-emails --screenshots
    ```
-   Si el usuario ya dio la URL pública de las imágenes, añade `--asset-base https://…/`.
-5. **Verificar visualmente** los screenshots a 600 y 390 px (`view`) contra la maqueta: textos, cortes de línea, espaciados, icono correcto. Corrige el spec y reconstruye si algo no coincide. Revisa los avisos del script (orden de bloques, CTA duplicado, peso, variables).
+5. **Verificar visualmente** los screenshots a 750 y 390 px (`view`) contra la maqueta: textos, cortes de línea, espaciados, icono correcto; en árabe, que todo esté espejado. Corrige el spec y reconstruye si algo no coincide. Revisa los avisos del script: orden de bloques, CTAs distintos, peso y, sobre todo, **"sin key de backend"** (variables que dev todavía no definió).
 6. **Entregar** (ver abajo).
 
 ## Entrega
 
-Copia la carpeta de salida a `/mnt/user-data/outputs/tradeview-emails/` (sin `screenshots/`), crea un zip de ella y presenta con `present_files`, en este orden: los PDF, los HTML de `preview/`, y el zip. Estos correos son archivos para el ESP del usuario: no los publiques como artifact.
+Copia la carpeta de salida a `/mnt/user-data/outputs/tradeview-emails/` (sin `screenshots/`), crea un zip de ella y presenta con `present_files`, en este orden: los PDF, los HTML de `preview/`, y el zip. Estos correos son archivos para el backend: no los publiques como artifact.
 
 En el mensaje, en español y sin jerga, explica brevemente:
 - **PDF** → para compartir y aprobar; se abre en cualquier lado.
-- **Preview** → el correo en el navegador, aunque se descargue suelto; no sirve para enviar.
-- **Producción** (dentro del zip) → lo que se pasa a los devs; necesita la carpeta `assets/` al lado y, para enviarse de verdad, subir las imágenes a un servidor y usar esa URL.
+- **Preview** → el correo en el navegador, con las variables legibles; no sirve para enviar.
+- **Producción** (dentro del zip) → lo que se pasa a desarrollo: `<correo>-<idioma>-<entidad>.html` con variables Jinja e imágenes apuntando a S3. Las imágenes de `produccion/subir-a-s3/` las tiene que subir **Dani Peña** a la carpeta de S3 antes de que se vean.
+- Qué variables quedaron **sin key de backend** (hay que pedírselas a dev).
 - Cualquier diferencia entre la maqueta y el design system que hayas resuelto siguiendo la maqueta.
-- Las variables que quedan para reemplazar en el ESP.
+- Qué textos traduciste tú (y los de `locales/` marcados como propuesta) para que el equipo los revise.
 
-Para dudas del tipo "no se ven los logos", "cómo lo mando", "qué hago con esto", "se lo paso a los devs" → `references/delivery-and-handoff.md` (incluye la plantilla de nota de entrega para devs).
+Para dudas del tipo "no se ven las imágenes", "cómo lo mando", "qué hago con esto", "se lo paso a los devs" → `references/delivery-and-handoff.md` (estándar de dev completo y plantilla de nota de entrega).
 
 ## Reglas que no se negocian
 
+- **Estándar de dev:** un solo archivo HTML, tablas, CSS 100% inline, **sin `<style>`, sin clases, sin flexbox**, imágenes por URL de S3. El script lo cumple y se detiene si algo lo rompe: nunca lo "arregles" a mano en el HTML.
 - Estructura, colores y footer vienen del script — no escribas HTML de correo a mano ni cambies la plantilla por un correo puntual. Si el usuario pide un cambio **global** (afecta a todos los correos), edita `build_email.py` y reconstruye todos los correos afectados.
-- Un solo CTA por correo, color `#EB0052`. Links en `#A898FB`.
+- Un solo CTA por correo, color `#EB0052` — se puede repetir el **mismo** CTA en correos largos, nunca dos acciones distintas. Links en `#A898FB`; el email de soporte en `#D1E0FF`.
+- **Todo el texto se inyecta**: el cuerpo va en el spec de cada idioma y los textos fijos en `locales/<lang>.json`. Los datos de la persona o la cuenta (nombre, montos, IDs, códigos, credenciales) siempre como variable (`[First Name]`, `[Amount]`…), nunca escritos. Las variables se escriben igual en todos los idiomas; en producción el script las pasa a Jinja con `delivery.json`.
+- **Nada sin aprobar llega a desarrollo.** Los idiomas distintos al inglés arrancan como borrador (`"copy": "draft"` en el spec y `"status": "draft"` en `locales/`). Solo cambia a `approved` cuando el usuario confirme que alguien del equipo revisó ese texto; nunca lo apruebes tú. Las traducciones pueden ser adaptaciones, no literales: copia exacto el texto aprobado que te den.
+- **No inventes keys de backend.** Si una variable no está en `delivery.json` → `variables`, déjala así y pide a dev el nombre del campo.
+- El footer legal sale de `locales/` según `lang` y `entity`. No lo edites a mano ni lo traduzcas: viene de Figma.
+- El `hero` con degradado es solo para correos transaccionales (depósito, retiro, transferencia, formularios); nunca para notificaciones o confirmaciones simples.
 - Icono de éxito en verde `#3ED47A`; todos los demás iconos de estado en lila `#A898FB`.
 - Producción usa PNG @2x con `alt`, nunca SVG. Preview usa SVG incrustado. Ambos salen del script.
 - El texto de la maqueta se copia exacto. No inventes variables ni datos legales.
 - Si la maqueta contradice el design system, sigue la maqueta y avisa. No edites el `design-system.md` salvo que el usuario lo pida.
+- Los iconos siempre salen de [Google Fonts Icons](https://fonts.google.com/icons) (Material Symbols), configurados en Weight 300 y estilo Rounded — nunca se dibujan a mano ni se buscan en otro banco de iconos.
 
 ## Agregar un icono de estado
 
-1. Crea `assets/svg/icon-<nombre>.svg` (viewBox 24×24, estilo outline trazo ~1.8, color `#A898FB`; verde `#3ED47A` solo si significa éxito).
-2. Copia la skill a un directorio escribible si está en solo lectura, y corre `python scripts/build_assets.py` para generar el PNG @2x.
-3. Úsalo en el spec con `{"type":"icon","name":"<nombre>"}`.
+1. Busca el icono en [Google Fonts Icons](https://fonts.google.com/icons) (Material Symbols, Weight 300, estilo Rounded) y descarga su SVG (o `https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/<nombre>/wght300/24px.svg`). Guárdalo como `assets/svg/icon-<nombre>.svg` agregando `fill="#A898FB"` al `<svg>` (verde `#3ED47A` solo si significa éxito).
+2. Copia la skill a un directorio escribible si está en solo lectura, y corre `python scripts/build_assets.py icon-<nombre>` para generar el PNG @2x.
+3. Úsalo en el spec con `{"type":"icon","name":"<nombre>"}`. Avisa al usuario que el PNG nuevo también hay que subirlo a S3.
 
-Lo mismo aplica si el usuario entrega un logo nuevo: reemplaza el SVG en `assets/svg/` con el mismo nombre (`tradeview-color.svg`, `tradeview-white.svg`, `edge-white.svg`) y regenera. Antes de reemplazar, compara con el existente: si es idéntico, díselo al usuario en vez de "cambiarlo".
+Excepción: los logos de marca (plataformas de descarga, TradeGATEHub, Up!, redes) no existen en Google Fonts; son los `brand-*.svg` y `social-*.svg` exportados de Figma.
+
+Si el usuario entrega un logo nuevo: reemplaza el SVG en `assets/svg/` con el mismo nombre (`tradeview-color.svg`, `tradeview-white.svg`, `edge-white.svg`) y regenera. Antes de reemplazar, compara con el existente: si es idéntico, díselo al usuario en vez de "cambiarlo".
+
+## Agregar un idioma
+
+Copia `locales/en.json` a `locales/<código>.json` y traduce `footer_title`, `greeting`, `help`, `more_title`, `academy`, `insights`. El `legal` se copia **tal cual** de Figma → sección Footer (una versión por entidad). Si el idioma se escribe de derecha a izquierda, pon `"dir": "rtl"`. Agrega la fuente del alfabeto a `font` y `gfont`.
 
 ## Contenido de la skill
 
-- `scripts/build_email.py` — spec JSON → produccion/ + preview/ + pdf/ + ABRIR-AQUI.html + LEEME.txt
-- `scripts/build_assets.py` — regenera `assets/png/` desde `assets/svg/`
-- `assets/svg/` — logos oficiales, iconos de estado, redes (fuente)
-- `assets/png/` — versiones @2x para producción
-- `examples/` — specs de los correos ya aprobados (proof of address ×3, withdrawal in progress, ID expired)
-- `references/spec-format.md` — todos los tipos de bloque
+- `scripts/build_email.py` — spec JSON → produccion/ (+ subir-a-s3/) + preview/ + pdf/ + ABRIR-AQUI.html + LEEME.txt
+- `scripts/build_assets.py` — regenera `assets/png/` desde `assets/svg/` (`python scripts/build_assets.py icon-x` para uno solo)
+- `delivery.json` — integración con el backend: carpeta de S3, links reales, mapa de variables → Jinja, redes
+- `assets/svg/` — logos oficiales, iconos de estado (`icon-*`), iconos de interfaz (`ui-*`), logos de plataformas y productos (`brand-*`), redes (fuente)
+- `assets/png/` — versiones @2x (las que se suben a S3)
+- `locales/` — un JSON por idioma: fuente, dirección (RTL), textos fijos y footer legal por entidad (LTD / SAC)
+- `examples/` — specs de los correos de Figma: verificación de documentos, OTP, cuenta lista (MT4), depósito (en/es/ar), retiros, formulario de +25k con hero
+- `references/spec-format.md` — todos los tipos de bloque y cómo funcionan las variables
 - `references/design-rules.md` — tokens, medidas y decisiones de diseño
-- `references/delivery-and-handoff.md` — entregables, problemas frecuentes, pasos para devs, plantilla de handoff
+- `references/delivery-and-handoff.md` — estándar de dev, entregables, problemas frecuentes, plantilla de handoff

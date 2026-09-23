@@ -1,0 +1,93 @@
+{
+  "subject": "Thank you for submitting your additional information",
+  "preheader": "We have received your financial and employment information.",
+  "blocks": [
+    {
+      "type": "hero",
+      "icon": "document",
+      "alt": "Information received",
+      "title": "Thank you for submitting<br>your additional information"
+    },
+    {
+      "type": "greeting",
+      "text": "Dear [First Name],"
+    },
+    {
+      "type": "paragraph",
+      "text": "We have successfully received your financial and employment information, along with your deposit request."
+    },
+    {
+      "type": "paragraph",
+      "text": "Below is a summary of your submitted details:"
+    },
+    {
+      "type": "details_card",
+      "sections": [
+        {
+          "title": "Employment details:",
+          "rows": [
+            [
+              "Employment status:",
+              "[Employment status]"
+            ],
+            [
+              "Job title:",
+              "[Job title]"
+            ],
+            [
+              "Employer:",
+              "[Employer]"
+            ],
+            [
+              "Industry:",
+              "[Industry]"
+            ],
+            [
+              "Employment type:",
+              "[Employment type]"
+            ]
+          ]
+        },
+        {
+          "title": "Financial details:",
+          "rows": [
+            [
+              "What&rsquo;s your annual income?",
+              "[Annual income]"
+            ],
+            [
+              "How much do you plan to invest/trade annually?",
+              "[Annual investment]"
+            ],
+            [
+              "What&rsquo;s the origin/source of your deposits/funds?",
+              "[Source of funds]"
+            ],
+            [
+              "What&rsquo;s the purpose of the account?",
+              "[Account purpose]"
+            ]
+          ]
+        },
+        {
+          "title": "Trading experience:",
+          "rows": [
+            [
+              "How many years have you been trading?",
+              "[Years trading]"
+            ],
+            [
+              "How often do you trade?",
+              "[Trading frequency]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "label": "Log in to your Cabinet",
+      "href": "[cabinet_url]"
+    }
+  ]
+}

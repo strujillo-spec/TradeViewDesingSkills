@@ -1,0 +1,53 @@
+{
+  "subject": "Deposit confirmation",
+  "preheader": "Your deposit has been successfully credited to your account.",
+  "blocks": [
+    {
+      "type": "icon",
+      "name": "check-circle",
+      "alt": "Deposit successful"
+    },
+    {
+      "type": "title",
+      "text": "Deposit successful"
+    },
+    {
+      "type": "greeting"
+    },
+    {
+      "type": "pill",
+      "variant": "success",
+      "text": "Your deposit has been successfully credited to your account."
+    },
+    {
+      "type": "details_card",
+      "title": "Deposit details",
+      "rows": [
+        [
+          "Amount:",
+          "[Amount]"
+        ],
+        [
+          "Account:",
+          "[Account]"
+        ],
+        [
+          "Transaction ID:",
+          "[Transaction ID]"
+        ],
+        [
+          "Transaction type:",
+          "[Transaction type]"
+        ],
+        [
+          "Status:",
+          "[Status]"
+        ],
+        [
+          "Description:",
+          "[Description]"
+        ]
+      ]
+    }
+  ]
+}

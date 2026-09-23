@@ -1,0 +1,29 @@
+{
+  "subject": "Your one-time code for secure verification",
+  "preheader": "Use this code to verify your identity.",
+  "help": false,
+  "blocks": [
+    {
+      "type": "icon",
+      "name": "password",
+      "alt": "Verification code"
+    },
+    {
+      "type": "title",
+      "text": "Your verification code"
+    },
+    {
+      "type": "subtitle",
+      "text": "Use this code to verify your identity:"
+    },
+    {
+      "type": "code",
+      "label": "One-time code:",
+      "code": "[OTP Code]"
+    },
+    {
+      "type": "paragraph",
+      "text": "If you didn&rsquo;t request this code, please contact us at <a href=\"mailto:support@tradeviewmarkets.com\" style=\"color:#D1E0FF;text-decoration:underline;\">support@tradeviewmarkets.com</a>."
+    }
+  ]
+}

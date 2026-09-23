@@ -1,0 +1,36 @@
+{
+  "lang": "zh",
+  "status": "draft",
+  "dir": "ltr",
+  "font": "'Plus Jakarta Sans','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif",
+  "gfont": "Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;600;800",
+  "footer_title": "联系我们",
+  "greeting": "[First Name]，您好：",
+  "help": "<strong>需要帮助？</strong>请通过 {email} 联系我们。",
+  "signature": "Tradeview Markets",
+  "more_title": "更多 Tradeview 资讯",
+  "academy": [
+    "TradeGATEHub Academy",
+    "与交易者交流，获取免费交易资源。",
+    "探索"
+  ],
+  "insights": [
+    "市场洞察",
+    "在我们的博客获取市场动态与交易见解。",
+    "阅读博客"
+  ],
+  "support_email": "support@tradeviewmarkets.com",
+  "legal": {
+    "ltd": [
+      "外汇交易存在亏损风险，并不适合所有投资者。我们通过买卖价差（Bid-Ask Spread）获得服务报酬。Copyright © {{year}}。保留所有权利。",
+      "Tradeview Ltd. 提供的服务和产品不面向美国境内提供，也不向美国法律定义的“美国人士（U.S. Persons）”提供。本网站所载信息不针对任何法律或法规禁止或限制外汇（Forex）和/或差价合约（CFDs）交易的国家或地区的居民。Tradeview Ltd. 是一家获得开曼群岛金融管理局（CIMA）正式授权和监管的经纪商/交易商（Broker/Dealer），牌照编号：585163。继续浏览本网站即表示您同意相关条款与条件。",
+      "Tradeview Ltd.<br>Grand Cayman, KY1-1002<br>4th Floor, Harbour Place, 103 South Church St, PO Box 1105<br>总办公室：+1 345 945 6271"
+    ],
+    "sac": [
+      "交易外币存在亏损风险，并不适合所有人。我们通过买卖价差获得服务报酬。版权所有© {{year}}。保留所有权利。",
+      "Tradeview Financial Markets S.A.C. 提供的服务和产品不在美国境内提供，也不向美国法律定义的美国人提供。本网站上的信息不针对任何当地法律或法规限制或禁止外汇和/或差价合约交易的国家/地区的居民。Tradeview Financial Markets S.A.C 被授权根据秘鲁政府颁布的《公司一般法》（LGS）开展业务。Tradeview Financial Markets S.A.C 在国家公共注册监督局 (SUNARP) 注册，公司编号为 13089531。Tradeview Financial Markets S.A.C 按照所有适用的政府法规在选定的场外衍生品市场提供金融服务。",
+      "Tradeview Financial Markets SAC ; Calle los Alcanfores # 495 Int. 505 Urb. Leuro Lima<br>Lima - Miraflores - Perú"
+    ]
+  },
+  "_status_help": "status: 'approved' cuando alguien del equipo revisó greeting, help, more_title, academy e insights. El legal viene de Figma y no se toca."
+}

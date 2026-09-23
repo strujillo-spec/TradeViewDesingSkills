@@ -1,0 +1,55 @@
+{
+  "slug": "deposit-confirmed",
+  "lang": "ar",
+  "subject": "تأكيد الإيداع",
+  "preheader": "تمت إضافة إيداعك إلى حسابك بنجاح.",
+  "blocks": [
+    {
+      "type": "icon",
+      "name": "check-circle",
+      "alt": "تم الإيداع بنجاح"
+    },
+    {
+      "type": "title",
+      "text": "تم الإيداع بنجاح"
+    },
+    {
+      "type": "greeting"
+    },
+    {
+      "type": "pill",
+      "variant": "success",
+      "text": "تمت إضافة إيداعك إلى حسابك بنجاح."
+    },
+    {
+      "type": "details_card",
+      "title": "تفاصيل الإيداع",
+      "rows": [
+        [
+          "المبلغ:",
+          "[Amount]"
+        ],
+        [
+          "الحساب:",
+          "[Account]"
+        ],
+        [
+          "رقم المعاملة:",
+          "[Transaction ID]"
+        ],
+        [
+          "نوع المعاملة:",
+          "[Transaction type]"
+        ],
+        [
+          "الحالة:",
+          "[Status]"
+        ],
+        [
+          "الوصف:",
+          "[Description]"
+        ]
+      ]
+    }
+  ]
+}

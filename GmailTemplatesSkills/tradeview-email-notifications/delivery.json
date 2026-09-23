@@ -1,0 +1,26 @@
+{
+  "_about": "Cómo se integran los correos con el backend de Tradeview. Fuente: estándar del equipo de desarrollo + su plantilla 1st-live-account-otherp-en-ltd.html.",
+  "asset_base": "https://documents-tvmarkets.s3.us-west-1.amazonaws.com/emails/",
+  "links": {
+    "[cabinet_url]": "https://cabinet.tvmarkets.com/{lang}/login",
+    "[academy_url]": "https://tradegatehub.com/",
+    "[blog_url]": "https://surfsup.tradeviewforex.com/"
+  },
+  "variables": {
+    "[First Name]": "{{ data['firstName'] }}",
+    "[Account number]": "{{ data['login'] }}",
+    "[Trading password]": "{{ data['password'] }}",
+    "[Investor password]": "{{ data['invest_pw'] }}",
+    "[Platform]": "{{ data['platform'] }}",
+    "[Trading platform]": "{{ data['platform'] }}",
+    "[Trading instrument]": "{{ data['trading_instrument'] }}"
+  },
+  "socials": [
+    ["linkedin", "LinkedIn", "https://www.linkedin.com/company/tradeview-forex"],
+    ["instagram", "Instagram", "https://www.instagram.com/tradeviewmarkets/"],
+    ["youtube", "YouTube", "https://www.youtube.com/channel/UCpPf9pAQj4n28hT65QIzRXA"],
+    ["tiktok", "TikTok", "https://www.tiktok.com/@tradeviewmarkets"],
+    ["facebook", "Facebook", "https://www.facebook.com/TradeviewMarkets/"],
+    ["x", "X", "https://x.com/Tradeview_"]
+  ]
+}

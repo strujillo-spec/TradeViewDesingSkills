@@ -1,0 +1,36 @@
+{
+  "lang": "ko",
+  "status": "draft",
+  "dir": "ltr",
+  "font": "'Plus Jakarta Sans','Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif",
+  "gfont": "Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;600;800",
+  "footer_title": "문의하기",
+  "greeting": "[First Name]님, 안녕하세요.",
+  "help": "<strong>도움이 필요하신가요?</strong> {email}로 문의해 주세요.",
+  "signature": "Tradeview Markets",
+  "more_title": "Tradeview 더 알아보기",
+  "academy": [
+    "TradeGATEHub Academy",
+    "트레이더와 소통하고 무료 트레이딩 자료를 이용하세요.",
+    "살펴보기"
+  ],
+  "insights": [
+    "시장 인사이트",
+    "블로그에서 시장 소식과 트레이딩 인사이트를 확인하세요.",
+    "블로그 읽기"
+  ],
+  "support_email": "support@tradeviewmarkets.com",
+  "legal": {
+    "ltd": [
+      "외환 거래에는 손실 위험이 있으며, 모든 투자자에게 적합한 것은 아닙니다. 당사는 매수·매도 호가 차이(Bid-Ask Spread)를 통해 서비스 수수료를 지급받습니다. Copyright © {{year}}. All rights reserved.",
+      "Tradeview Ltd.의 서비스 및 상품은 미국 내에서는 제공되지 않으며, 미국 법률에서 정의하는 미국인(U.S. Persons)에게도 제공되지 않습니다. 본 웹사이트의 정보는 현지 법률 또는 규정에 따라 외환(Forex) 및/또는 CFD 거래가 제한되거나 금지된 국가 또는 지역의 거주자를 대상으로 하지 않습니다. Tradeview Ltd.는 케이맨 제도 통화청(CIMA)의 규제를 받는 정식 인가 브로커/딜러(Broker/Dealer)이며, 라이선스 번호는 585163입니다. 본 웹사이트를 계속 이용하는 것은 이용약관에 동의하는 것으로 간주됩니다.",
+      "Tradeview Ltd.<br>Grand Cayman, KY1-1002<br>4층, Harbour Place, 103 South Church St, PO Box 1105<br>대표 사무소: +1 345 945 6271"
+    ],
+    "sac": [
+      "There is a risk of loss in trading foreign currencies and it is not suitable for everyone. We are compensated for our services through the bid-ask spread. Copyright© {{year}}. All rights reserved.",
+      "The services and products offered by Tradeview Financial Markets S.A.C. are not being offered within the United States (US) and not being offered to US Persons, as defined under US law. The information on this website is not directed to residents of any country where FX and/or CFDs trading is restricted or prohibited by local laws or regulations. Tradeview Financial Markets S.A.C Is authorized to conduct business pursuant to and in compliance with the General Law of Companies (LGS) promulgated by the government of Peru. Tradeview Financial Markets S.A.C is registered with the National Superintendence of Public Registries (SUNARP), company number 13089531. Tradeview Financial Markets S.A.C provides financial services in selected OTC derivative markets in compliance with all applicable government regulations.",
+      "Tradeview Financial Markets SAC ; Calle los Alcanfores # 495 Int. 505 Urb. Leuro Lima<br>Lima - Miraflores - Perú"
+    ]
+  },
+  "_status_help": "status: 'approved' cuando alguien del equipo revisó greeting, help, more_title, academy e insights. El legal viene de Figma y no se toca."
+}

@@ -1,0 +1,36 @@
+{
+  "lang": "en",
+  "status": "approved",
+  "dir": "ltr",
+  "font": "'Plus Jakarta Sans','Inter',Arial,Helvetica,sans-serif",
+  "gfont": "Plus+Jakarta+Sans:wght@400;500;600;700;800",
+  "footer_title": "Contact Us",
+  "greeting": "Hi [First Name],",
+  "help": "<strong>Need help?</strong> Contact us at {email}.",
+  "signature": "Tradeview Markets",
+  "more_title": "More from Tradeview",
+  "academy": [
+    "TradeGATEHub Academy",
+    "Connect with traders and access free trading resources.",
+    "Explore"
+  ],
+  "insights": [
+    "Market insights",
+    "Get market updates and trading insights from our Blog.",
+    "Read the Blog"
+  ],
+  "support_email": "support@tradeviewmarkets.com",
+  "legal": {
+    "ltd": [
+      "There is a risk of loss in trading foreign currencies and it is not suitable for everyone. We are compensated for our services through the bid-ask spread. Copyright© {{year}}. All rights reserved.",
+      "The services and products offered by Tradeview Ltd. are not being offered within the United States (US) and not being offered to US Persons, as defined under US law. The information on this website is not directed to residents of any country where FX and/or CFDs trading is restricted or prohibited by local laws or regulations. Tradeview Ltd. is a fully licensed Broker/Dealer under the regulations of the Cayman Island Monetary Authority (CIMA) License #585163. By keeping the navigation, you agree to the terms and conditions.",
+      "Tradeview Ltd. located in Grand Cayman, KY1-1002;<br>4th Floor Harbour Place, 103 South Church St, PO Box 1105<br>Main Office : +1 345 945 6271"
+    ],
+    "sac": [
+      "There is a risk of loss in trading foreign currencies and it is not suitable for everyone. We are compensated for our services through the bid-ask spread. Copyright© {{year}}. All rights reserved.",
+      "The services and products offered by Tradeview Financial Markets S.A.C. are not being offered within the United States (US) and not being offered to US Persons, as defined under US law. The information on this website is not directed to residents of any country where FX and/or CFDs trading is restricted or prohibited by local laws or regulations. Tradeview Financial Markets S.A.C is authorized to conduct business pursuant to and in compliance with the General Law of Companies (LGS) promulgated by the government of Peru. Tradeview Financial Markets S.A.C is registered with the National Superintendence of Public Registries (SUNARP), company number 13089531. Tradeview Financial Markets S.A.C provides financial services in selected OTC derivative markets in compliance with all applicable government regulations.",
+      "Tradeview Financial Markets SAC ; Calle los Alcanfores # 495 Int. 505 Urb. Leuro Lima<br>Lima - Miraflores - Perú"
+    ]
+  },
+  "_status_help": "status: 'approved' cuando alguien del equipo revisó greeting, help, more_title, academy e insights. El legal viene de Figma y no se toca."
+}
