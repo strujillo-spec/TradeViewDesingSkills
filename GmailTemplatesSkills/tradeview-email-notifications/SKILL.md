@@ -5,9 +5,29 @@ description: Crea correos transaccionales y de notificación de Tradeview Market
 
 # Correos de notificación · Tradeview Markets
 
-Genera correos que cumplen el design system de Tradeview (header negro con logo a color, body `#080B18`, footer negro con redes y legales, 750px fluido sobre fondo `#272336`) **y el estándar del equipo de desarrollo**: un solo HTML por correo, maquetado con tablas, CSS 100% inline (sin `<style>` ni flexbox), imágenes desde el bucket S3 y variables Jinja `{{ data['...'] }}`. El trabajo pesado (plantilla, footer, idiomas, RTL, S3, Jinja, PDF) lo hace `scripts/build_email.py`; tu trabajo es traducir la maqueta o el pedido a un **spec JSON por idioma** correcto y entregar bien.
+Genera correos que cumplen el design system de Tradeview (header negro con logo a color, body `#080B18`, footer negro con redes y legales, 750px fluido sobre fondo `#272336`) **y el estándar del equipo de desarrollo**: un solo HTML por correo, maquetado con tablas, CSS 100% inline (sin `<style>` ni flexbox), imágenes desde el bucket S3 y variables Jinja `{{ data['...'] }}`. La estructura y los estilos salen de la **base** (`base/`), y el trabajo pesado (idiomas, RTL, S3, Jinja, PDF) lo hace `scripts/build_email.py`; tu trabajo es traducir la maqueta o el pedido a un **spec JSON por idioma** correcto y entregar bien.
 
 La fuente de verdad visual es el archivo de Figma **Emails** (`https://www.figma.com/design/yAI1PcA8Zkv9RFUua3RVz4/Emails?node-id=9178-473`), secciones New user / Live account, Active user y Footer — la sección Research no se usa. Si tienes acceso al MCP de Figma y el usuario comparte un nodo, léelo con `get_screenshot` / `get_design_context`; `references/design-rules.md` ya resume ese archivo.
+
+## Lo fundamental — en TODOS los correos
+
+1. **Idioma.** Cada correo se genera en los idiomas que pida el usuario (`en`, `es`, `pt`, `ja`, `zh`, `ko`, `ar`), con **un spec por idioma**. El árabe sale espejado (RTL). Los textos fijos (saludo, ayuda, footer) salen de `locales/<idioma>.json`; la traducción del cuerpo puede ser una adaptación, no literal. Si el usuario no dijo los idiomas, pregúntalo.
+2. **Footer por entidad.** Cada correo lleva el footer legal de su entidad: `ltd` (Tradeview Ltd., Islas Caimán) o `sac` (Tradeview Financial Markets S.A.C., Perú), en el idioma del correo. Se pide con `"entity"` (`["ltd", "sac"]` genera las dos). **Nunca asumas la entidad**: si el usuario no la dijo, pregúntala.
+3. **Imágenes.** Puedes usar cualquier icono o logo que ya exista en `assets/` (y agregar iconos nuevos de Google Fonts). En **preview y PDF** siempre se ven, con la copia local. En **producción** los logos y redes de la base ya tienen URL; el resto queda `[S3:archivo]` hasta que el usuario te pase la URL que dio desarrollo — la registras en `delivery.json` → `images` y regeneras. Nunca inventes URLs.
+
+Antes de entregar, confirma en tu mensaje qué idiomas y qué entidades generaste.
+
+## La base
+
+Todos los correos se construyen sobre la misma base, en `base/`:
+- `base/base.html` — **la estructura**: el esqueleto fijo (fondo, contenedor de 750px, header, body, footer) con marcadores `<!-- SLOT:... -->` donde entra el contenido y `@@...@@` donde entran los estilos.
+- `base/tokens.json` — **los estilos**: colores, tipografías, medidas y espaciados, con el nombre de la variable de Figma cuando existe.
+- `base/variants.json` — **las variantes** de header y footer. Hoy solo existe `standard` en ambos. Los logos del header y footer y los iconos de redes ya están en el S3 de Tradeview (`url`), con los tamaños de Figma; el correo los usa directo. El texto legal del footer no va aquí: sale de `locales/` según la entidad.
+
+Cómo se cambia:
+- **Cambio para todos los correos** (un color, el logo, el espaciado) → se edita la base. Después hay que regenerar los correos que ya se entregaron y volver a pasárselos a desarrollo: no se actualizan solos.
+- **Cambio para algunos correos** (p. ej. un co-branding) → se agrega una variante en `base/variants.json` (+ sus imágenes en `assets/`) y el spec la elige con `"header"` / `"footer"`.
+- **Nunca** se edita a mano el HTML de un correo ni se escriben estilos en el spec.
 
 ## Flujo
 
@@ -34,7 +54,9 @@ Copia la carpeta de salida a `/mnt/user-data/outputs/tradeview-emails/` (sin `sc
 En el mensaje, en español y sin jerga, explica brevemente:
 - **PDF** → para compartir y aprobar; se abre en cualquier lado.
 - **Preview** → el correo en el navegador, con las variables legibles; no sirve para enviar.
-- **Producción** (dentro del zip) → lo que se pasa a desarrollo: `<correo>-<idioma>-<entidad>.html` con variables Jinja e imágenes apuntando a S3. Las imágenes de `produccion/subir-a-s3/` las tiene que subir **Dani Peña** a la carpeta de S3 antes de que se vean.
+- **Producción** (dentro del zip) → lo que se pasa a desarrollo: `<correo>-<idioma>-<entidad>.html` con variables Jinja e imágenes en S3. Los logos y redes de la base ya tienen URL. Las demás imágenes del correo (iconos, botones…) que aún no tengan URL quedan como `[S3:archivo]` y están en `produccion/subir-a-s3/`: hay que **pedirle a desarrollo que las suba** y, cuando pasen las URLs, registrarlas en `delivery.json` → `images` y regenerar.
+- **Qué idiomas y qué entidades** generaste (ej. "en, es y ar · LTD y SAC").
+- Qué imágenes quedaron **sin URL de S3** (están en `produccion/subir-a-s3/`; hay que pedirlas a desarrollo).
 - Qué variables quedaron **sin key de backend** (hay que pedírselas a dev).
 - Cualquier diferencia entre la maqueta y el design system que hayas resuelto siguiendo la maqueta.
 - Qué textos traduciste tú (y los de `locales/` marcados como propuesta) para que el equipo los revise.
@@ -44,10 +66,11 @@ Para dudas del tipo "no se ven las imágenes", "cómo lo mando", "qué hago con 
 ## Reglas que no se negocian
 
 - **Estándar de dev:** un solo archivo HTML, tablas, CSS 100% inline, **sin `<style>`, sin clases, sin flexbox**, imágenes por URL de S3. El script lo cumple y se detiene si algo lo rompe: nunca lo "arregles" a mano en el HTML.
-- Estructura, colores y footer vienen del script — no escribas HTML de correo a mano ni cambies la plantilla por un correo puntual. Si el usuario pide un cambio **global** (afecta a todos los correos), edita `build_email.py` y reconstruye todos los correos afectados.
+- Estructura, colores y footer vienen de la **base** — no escribas HTML de correo a mano ni cambies la base por un correo puntual (para eso están las variantes). Si el usuario pide un cambio **global**, edita `base/` (no el script) y reconstruye todos los correos afectados.
 - Un solo CTA por correo, color `#EB0052` — se puede repetir el **mismo** CTA en correos largos, nunca dos acciones distintas. Links en `#A898FB`; el email de soporte en `#D1E0FF`.
 - **Todo el texto se inyecta**: el cuerpo va en el spec de cada idioma y los textos fijos en `locales/<lang>.json`. Los datos de la persona o la cuenta (nombre, montos, IDs, códigos, credenciales) siempre como variable (`[First Name]`, `[Amount]`…), nunca escritos. Las variables se escriben igual en todos los idiomas; en producción el script las pasa a Jinja con `delivery.json`.
 - **Nada sin aprobar llega a desarrollo.** Los idiomas distintos al inglés arrancan como borrador (`"copy": "draft"` en el spec y `"status": "draft"` en `locales/`). Solo cambia a `approved` cuando el usuario confirme que alguien del equipo revisó ese texto; nunca lo apruebes tú. Las traducciones pueden ser adaptaciones, no literales: copia exacto el texto aprobado que te den.
+- **No inventes URLs de imágenes.** Solo se usan las de `base/variants.json` (logos y redes) y las registradas en `delivery.json` → `images` con la URL que pasó desarrollo. Lo demás queda `[S3:archivo]`.
 - **No inventes keys de backend.** Si una variable no está en `delivery.json` → `variables`, déjala así y pide a dev el nombre del campo.
 - El footer legal sale de `locales/` según `lang` y `entity`. No lo edites a mano ni lo traduzcas: viene de Figma.
 - El `hero` con degradado es solo para correos transaccionales (depósito, retiro, transferencia, formularios); nunca para notificaciones o confirmaciones simples.
@@ -75,7 +98,8 @@ Copia `locales/en.json` a `locales/<código>.json` y traduce `footer_title`, `gr
 
 - `scripts/build_email.py` — spec JSON → produccion/ (+ subir-a-s3/) + preview/ + pdf/ + ABRIR-AQUI.html + LEEME.txt
 - `scripts/build_assets.py` — regenera `assets/png/` desde `assets/svg/` (`python scripts/build_assets.py icon-x` para uno solo)
-- `delivery.json` — integración con el backend: carpeta de S3, links reales, mapa de variables → Jinja, redes
+- `base/` — la base de todos los correos: `base.html` (estructura), `tokens.json` (estilos), `variants.json` (variantes de header y footer)
+- `delivery.json` — integración con el backend: carpeta de S3 para los iconos, links reales, mapa de variables → Jinja
 - `assets/svg/` — logos oficiales, iconos de estado (`icon-*`), iconos de interfaz (`ui-*`), logos de plataformas y productos (`brand-*`), redes (fuente)
 - `assets/png/` — versiones @2x (las que se suben a S3)
 - `locales/` — un JSON por idioma: fuente, dirección (RTL), textos fijos y footer legal por entidad (LTD / SAC)

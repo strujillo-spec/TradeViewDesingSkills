@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="@@lang@@" dir="@@dir@@" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+<title>@@subject@@</title>
+<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+<!--[if !mso]><!--><link href="https://fonts.googleapis.com/css2?family=@@gfont@@&display=swap" rel="stylesheet"><!--<![endif]-->
+</head>
+<body dir="@@dir@@" style="margin:0;padding:0;background:@@colors.outer@@;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">@@preheader@@&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="@@colors.outer@@" style="background:@@colors.outer@@;border-collapse:collapse;">
+<tr><td align="center" valign="top" style="padding:@@layout.outer_pad@@;">
+<!--[if mso]><table role="presentation" width="@@layout.width@@" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td><![endif]-->
+<table role="presentation" dir="@@dir@@" width="@@layout.width@@" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:@@layout.width@@px;margin:0 auto;border-collapse:collapse;">
+
+  <!-- ===== HEADER ===== -->
+  <tr><td align="center" bgcolor="@@colors.header@@" style="background:@@colors.header@@;padding:@@layout.header_pad@@;">
+    <!-- SLOT:header -->
+  </td></tr>
+
+<!-- SLOT:hero -->  <!-- ===== BODY ===== -->
+  <tr><td bgcolor="@@colors.body@@" style="background:@@colors.body@@;padding:@@layout.pad@@px;font-family:@@font@@;color:@@colors.text@@;text-align:@@start@@;">
+<!-- SLOT:body -->    <!-- Ayuda + firma -->
+<!-- SLOT:signature -->  </td></tr>
+<!-- SLOT:more -->
+  <!-- ===== FOOTER (@@entity@@) ===== -->
+  <tr><td bgcolor="@@colors.footer@@" style="background:@@colors.footer@@;padding:@@layout.footer_pad_y@@px @@layout.pad@@px;font-family:@@font@@;color:@@colors.text@@;">
+<!-- SLOT:footer -->  </td></tr>
+
+</table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr>
+</table>
+</body>
+</html>

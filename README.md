@@ -51,7 +51,8 @@ Cada skill sigue esta convención:
 ```
 
 Cada skill puede sumar carpetas propias. Por ejemplo, `tradeview-email-notifications` agrega
-`locales/` (textos y footers por idioma) y `delivery.json` (integración con el backend).
+`base/` (estructura y estilos comunes de todos los correos), `locales/` (textos y footers por idioma) y
+`delivery.json` (integración con el backend).
 
 `SKILL.md` es la fuente de verdad. Los adaptadores de `cursor/` y `openai/` son traducciones de
 ese mismo flujo a las capacidades de cada plataforma (ninguna de las dos tiene un formato de

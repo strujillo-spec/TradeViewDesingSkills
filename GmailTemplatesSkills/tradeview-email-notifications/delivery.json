@@ -1,6 +1,7 @@
 {
   "_about": "Cómo se integran los correos con el backend de Tradeview. Fuente: estándar del equipo de desarrollo + su plantilla 1st-live-account-otherp-en-ltd.html.",
-  "asset_base": "https://documents-tvmarkets.s3.us-west-1.amazonaws.com/emails/",
+  "images": {},
+  "_images_help": "URLs de S3 de las imágenes de cada correo (iconos, botones, plataformas…), una por archivo: \"icon-ban-2x.png\": \"https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/…\". Se agregan cuando desarrollo sube la imagen y pasa la URL. Las que no estén aquí salen como [S3:archivo] en producción. Los logos y redes de la base no van aquí: están en base/variants.json.",
   "links": {
     "[cabinet_url]": "https://cabinet.tvmarkets.com/{lang}/login",
     "[academy_url]": "https://tradegatehub.com/",
@@ -14,13 +15,5 @@
     "[Platform]": "{{ data['platform'] }}",
     "[Trading platform]": "{{ data['platform'] }}",
     "[Trading instrument]": "{{ data['trading_instrument'] }}"
-  },
-  "socials": [
-    ["linkedin", "LinkedIn", "https://www.linkedin.com/company/tradeview-forex"],
-    ["instagram", "Instagram", "https://www.instagram.com/tradeviewmarkets/"],
-    ["youtube", "YouTube", "https://www.youtube.com/channel/UCpPf9pAQj4n28hT65QIzRXA"],
-    ["tiktok", "TikTok", "https://www.tiktok.com/@tradeviewmarkets"],
-    ["facebook", "Facebook", "https://www.facebook.com/TradeviewMarkets/"],
-    ["x", "X", "https://x.com/Tradeview_"]
-  ]
+  }
 }

@@ -6,7 +6,7 @@ idiomas (en, es, pt, ja, zh, ko, ar) y para las dos entidades (Tradeview Ltd. y 
 tres cosas por correo: **PDF** para aprobar, **preview** para ver en el navegador y **producción**
 con el estándar de desarrollo (tablas, CSS inline, imágenes en S3, variables Jinja).
 
-La skill necesita la carpeta completa: `SKILL.md`, `scripts/`, `assets/`, `locales/`, `examples/`,
+La skill necesita la carpeta completa: `SKILL.md`, `base/`, `scripts/`, `assets/`, `locales/`, `examples/`,
 `references/` y `delivery.json`. Elige tu plataforma:
 
 ## Claude.ai (chat web)
@@ -60,8 +60,8 @@ Si la skill cambia, vuelve a armar `skill.zip` y reemplaza los archivos del GPT.
 
 ## Mantener la skill actualizada
 
-Todas las plataformas usan los mismos archivos. Si cambias algo (diseño, reglas, idiomas, variables
-de backend), hazlo en esta carpeta y después actualiza cada plataforma donde esté instalada:
+Todas las plataformas usan los mismos archivos. Si cambias algo (la base de estilos, reglas, idiomas,
+variables de backend), hazlo en esta carpeta y después actualiza cada plataforma donde esté instalada:
 
 - **Claude.ai:** regenera el `.skill` desde `GmailTemplatesSkills/` y vuelve a subirlo:
   ```bash

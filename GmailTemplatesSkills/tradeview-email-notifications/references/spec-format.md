@@ -1,7 +1,8 @@
 # Formato del spec JSON
 
-Cada correo se describe con un JSON **por idioma**. `build_email.py` se encarga del header, contenedor,
-bloque de ayuda/firma, More from Tradeview y footer — el spec solo describe el **Body**.
+Cada correo se describe con un JSON **por idioma**. La base (`base/`) pone el header, contenedor, bloque de
+ayuda/firma, More from Tradeview y footer — el spec solo describe el **Body** (y, si hace falta, qué variante
+de header/footer usar).
 
 ```json
 {
@@ -30,6 +31,8 @@ bloque de ayuda/firma, More from Tradeview y footer — el spec solo describe el
 - La traducción **no tiene que ser literal**: cada idioma puede cambiar palabras, tono, orden y largo de
   las frases. Lo que no cambia son los nombres de las variables (`[First Name]`…), el footer legal y,
   salvo excepción aprobada, los bloques.
+- `header` / `footer` (opcionales, default `"standard"`): variante de `base/variants.json`. Úsalas solo para
+  casos especiales aprobados (p. ej. co-branding); si la variante no existe, el build se detiene.
 - `subject`: asunto del correo (también va en `<title>`).
 - `preheader`: texto de vista previa en la bandeja (≈ 40–90 caracteres). Siempre definirlo.
 - `help` (opcional, default `true`): `false` quita la línea "Need help?" (p. ej. el OTP, que ya trae su
@@ -53,7 +56,7 @@ si hay `hero` junto con `icon`/`title`. Los bloques opcionales simplemente se om
 | `icon` | `name`, `alt` | Estado: check-circle (verde, éxito) · ban · alert-circle · document · clock · clipboard-clock · password · deposit · withdrawal · transfer · call · download (lila). Para uno nuevo ver SKILL.md → "Agregar un icono". |
 | `title` | `text` | H1. Admite HTML. Para forzar el corte de línea de la maqueta usa `<br>` (aplica también en celular). |
 | `subtitle` | `text` | Debajo del H1. |
-| `image` | `src`, `alt` | Banner 650px de ancho, fluido. `src` = ruta local relativa al spec (se sube a S3 con las demás imágenes) o URL `https://`. |
+| `image` | `src`, `alt` | Banner 650px de ancho, fluido. `src` = URL `https://` de S3 o ruta local relativa al spec (en ese caso queda pendiente de subir, como los iconos). |
 | `greeting` | `text` (opcional) | Default según idioma (`Hi [First Name],`, `Hola [First Name],`…). |
 | `paragraph` | `text`, `margin_bottom` (opcional) | Admite `<strong>`, `<a>`, `&rsquo;`. El espaciado es automático (20px dentro de un grupo, 36px entre grupos, como en Figma); `margin_bottom` solo si la maqueta lo pide. |
 | `pill` | `text`, `variant` (opcional) | `warning` (amarillo, default) · `success` (verde) · `error` (rojo). |

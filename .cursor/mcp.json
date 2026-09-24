@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "figma-desktop": {
+      "command": "cclaude plugin install figma@claude-plugins-official"
+    }
+  }
+}

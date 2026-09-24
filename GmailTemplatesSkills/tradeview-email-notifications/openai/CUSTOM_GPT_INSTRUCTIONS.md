@@ -20,7 +20,7 @@ references/design-rules.md, references/spec-format.md y references/delivery-and-
 
 Diferencias con SKILL.md en este entorno:
 - La primera vez en cada conversación, descomprime skill.zip con Code Interpreter en
-  /mnt/data/skill/ y trabaja desde ahí (scripts/, assets/, locales/, examples/).
+  /mnt/data/skill/ y trabaja desde ahí (base/, scripts/, assets/, locales/, examples/).
 - Donde SKILL.md dice /home/claude/specs/, usa /mnt/data/specs/. Donde dice
   /home/claude/tradeview-emails, usa /mnt/data/tradeview-emails.
 - No hay present_files: entrega los PDF, los HTML de preview/ y un zip de la carpeta de
@@ -39,7 +39,7 @@ Responde siempre en español, sin jerga.
    - `SKILL.md`
    - `references/design-rules.md`, `references/spec-format.md`, `references/delivery-and-handoff.md`
    - `skill.zip` — armado desde la carpeta de la skill con:
-     `zip -r skill.zip scripts assets locales examples references delivery.json SKILL.md`
+     `zip -r skill.zip base scripts assets locales examples references delivery.json SKILL.md`
 
 ## Limitaciones conocidas frente a Claude
 

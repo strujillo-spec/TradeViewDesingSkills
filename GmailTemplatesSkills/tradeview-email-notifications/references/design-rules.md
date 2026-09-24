@@ -7,7 +7,8 @@ Fuente de verdad: archivo de Figma **Emails** → página "New user and active u
 
 Los correos se construyen a **750px fluido**, igual que Figma y que los correos que hoy tiene dev en
 producción: las medidas de Figma se usan **1:1**. Las decisiones marcadas con ★ son del equipo y mandan
-sobre Figma. El estándar técnico de dev (tablas, CSS inline, S3, Jinja) está en
+sobre Figma. **Los valores exactos viven en `base/tokens.json`** (y la estructura en `base/base.html`); este
+documento los explica para personas. Si cambias un valor, cámbialo en `tokens.json` y actualiza aquí. El estándar técnico de dev (tablas, CSS inline, S3, Jinja) está en
 `references/delivery-and-handoff.md`.
 
 ## Estructura

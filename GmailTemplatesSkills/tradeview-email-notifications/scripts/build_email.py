@@ -4,9 +4,12 @@
 Estándar del equipo de desarrollo: un solo archivo HTML por correo, maquetado con tablas, CSS 100% inline
 (sin <style>, sin flexbox), imágenes por URL del bucket S3 y variables Jinja {{ data['...'] }}.
 
+La estructura y los estilos salen de la BASE (base/): base.html (esqueleto), tokens.json (estilos) y
+variants.json (variantes de header y footer). Este script solo arma el contenido con esos valores.
+
 Por cada spec genera:
   produccion/<nombre>.html       -> lo que se entrega a dev (imágenes apuntando a S3, variables Jinja)
-  produccion/subir-a-s3/*.png    -> imágenes que hay que subir al bucket (las sube Dani Peña)
+  produccion/subir-a-s3/*.png    -> imágenes del correo que todavía no tienen URL de S3 (se le piden a desarrollo)
   preview/<nombre>.html          -> archivo único con SVG incrustado, para ver y aprobar en cualquier navegador
   pdf/<nombre>.pdf               -> para compartir y aprobar diseño
 Además: ABRIR-AQUI.html y LEEME.txt en la raíz de la carpeta de salida.
@@ -15,22 +18,35 @@ Además: ABRIR-AQUI.html y LEEME.txt en la raíz de la carpeta de salida.
 
 Uso:
   python scripts/build_email.py spec1.json [spec2.json ...] --out salida
-  Opciones: --no-pdf  --screenshots (PNG a 750 y 390 px)  --asset-base URL (reemplaza la de delivery.json)
+  Opciones: --no-pdf  --screenshots (PNG a 750 y 390 px)
 
 Formato del spec: ver references/spec-format.md · Integración con backend: delivery.json
 """
-import argparse, base64, datetime, html, json, re, shutil, sys
+import argparse, base64, datetime, html, json, re, shutil, sys, urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SVG_DIR = ROOT / "assets" / "svg"
 PNG_DIR = ROOT / "assets" / "png"
 LOCALES = ROOT / "locales"
+BASE = ROOT / "base"
 DELIVERY = json.loads((ROOT / "delivery.json").read_text())
+TOKENS = json.loads((BASE / "tokens.json").read_text())
+VARIANTS = json.loads((BASE / "variants.json").read_text())
+SKELETON = (BASE / "base.html").read_text()
 YEAR = str(datetime.date.today().year)
 
-W, PAD = 750, 50            # ancho del correo y padding lateral (Figma 1:1)
-CW = W - 2 * PAD            # ancho de contenido: 650
+# Atajos a la base de estilos
+C = {k: v["value"] for k, v in TOKENS["colors"].items()}       # colores
+TY = TOKENS["type"]                                             # tipografía
+LY = TOKENS["layout"]                                           # medidas generales
+K = TOKENS["components"]                                        # medidas de componentes
+PILLS = {k: (v["bg"], v["fg"]) for k, v in TOKENS["pills"].items()}
+HERO = TOKENS["hero"]
+
+W, PAD = LY["width"], LY["pad"]
+CW = W - 2 * PAD            # ancho de contenido
+G, g = LY["gap_group"], LY["gap_tight"]
 ICONS = {p.stem[5:] for p in SVG_DIR.glob("icon-*.svg")}
 PLATFORMS = {  # asset, ancho, alto, etiqueta por defecto
     "windows": ("brand-windows", 24, 24, "Windows"),
@@ -39,20 +55,24 @@ PLATFORMS = {  # asset, ancho, alto, etiqueta por defecto
     "android": ("brand-googleplay", 28, 28, "Android"),
     "web": ("brand-web", 24, 24, "Web version"),
 }
-PILLS = {"warning": ("#FFE8C2", "#6B3A00"), "success": ("#E6F5EA", "#075C24"), "error": ("#FFE5E5", "#8D0000")}
 BODY_ORDER = ["hero", "icon", "title", "subtitle", "image", "greeting", "content", "cta"]
 CONTENT = {"paragraph", "pill", "list_card", "details_card", "heading", "code", "alert", "note", "steps"}
-TIGHT = {  # pares de bloques que van a 20px (mismo grupo en Figma); el resto va a 36px
+TIGHT = {  # pares de bloques que van a gap_tight (mismo grupo en Figma); el resto va a gap_group
     ("icon", "*"), ("title", "subtitle"), ("greeting", "*"), ("heading", "*"),
     ("paragraph", "paragraph"), ("paragraph", "pill"), ("paragraph", "list_card"), ("paragraph", "note"),
     ("pill", "paragraph"), ("pill", "pill"), ("details_card", "alert"), ("code", "alert"),
     ("note", "steps"), ("note", "note"),
 }
-G, g = 36, 20
 
 # Se fijan por idioma en set_locale()
 FONT = TXT = START = END = LANG = ""
 LOC = {}
+
+
+def fs(style):
+    """font-size + line-height de un estilo de tokens.json."""
+    t = TY[style]
+    return f"font-size:{t['size']}px;line-height:{t['lh']}px;"
 
 
 def set_locale(lang):
@@ -62,8 +82,15 @@ def set_locale(lang):
         sys.exit(f"Idioma '{lang}' sin locales/{lang}.json. Disponibles: {sorted(p.stem for p in LOCALES.glob('*.json'))}")
     LOC, LANG = json.loads(path.read_text()), lang
     FONT = LOC["font"]
-    TXT = f"font-family:{FONT};color:#FFFFFF;"
+    TXT = f"font-family:{FONT};color:{C['text']};"
     START, END = ("right", "left") if LOC["dir"] == "rtl" else ("left", "right")
+
+
+def variant(kind, name):
+    options = VARIANTS[kind]
+    if name not in options:
+        sys.exit(f"Variante de {kind} '{name}' no existe en base/variants.json. Disponibles: {sorted(options)}")
+    return options[name]
 
 
 class Ctx:
@@ -74,28 +101,41 @@ class Ctx:
         self.images = {}       # nombre destino -> ruta local de imágenes propias (banners)
 
 
-def img(ctx, name, w, h, alt, style="", display="block", fluid=False):
-    """<img> a {ASSET}<name>-2x.png. En preview se reemplaza por SVG inline. fluid: se encoge en pantallas angostas."""
-    ctx.pngs.add(f"{name}-2x.png")
+def img(ctx, name, w, h, alt, style="", display="block", fluid=False, url=None):
+    """<img> a {ASSET}<name>-2x.png (o a `url` si la imagen ya está en S3). En preview se incrusta.
+    fluid: se encoge en pantallas angostas."""
     size = f"width:100%;max-width:{w}px;" if fluid else f"width:{w}px;"
-    return (f'<img src="{{ASSET}}{name}-2x.png" data-svg="{name}" width="{w}" height="{h}" alt="{html.escape(alt)}" '
+    if url:
+        src, data = url, f'data-remote="1" data-svg="{name}"'
+    else:
+        ctx.pngs.add(f"{name}-2x.png")
+        src, data = f"{{ASSET}}{name}-2x.png", f'data-svg="{name}"'
+    return (f'<img src="{src}" {data} width="{w}" height="{h}" alt="{html.escape(alt)}" '
             f'style="display:{display};border:0;outline:none;text-decoration:none;{size}height:auto;{style}">')
 
 
-def links(text, color="#A898FB"):
+def logo(ctx, l, **kw):
+    return img(ctx, l["asset"], l["width"], l["height"], l["alt"], url=l.get("url"), **kw)
+
+
+def links(text, color=None):
     """Estilo inline para <a> que vengan sin style en el spec."""
+    color = color or C["link"]
     return re.sub(r"<a (?![^>]*style=)", f'<a style="color:{color};text-decoration:underline;" ', text)
 
 
-def status_icon(ctx, name, alt, size=39, style=""):
+def status_icon(ctx, name, alt, size=None, style=""):
+    size = size or K["icon"]["status"]
     if name not in ICONS:
         sys.exit(f"Icono '{name}' no existe. Disponibles: {sorted(ICONS)}. "
                  f"Descárgalo de Google Fonts a assets/svg/icon-{name}.svg y corre build_assets.py")
     return img(ctx, "icon-" + name, size, size, alt, style=f"height:{size}px;" + style)
 
 
-def p(text, size=14, lh=20, mb=g, weight=400, color="#A898FB"):
-    return (f'    <p style="margin:0 0 {mb}px;{TXT}font-size:{size}px;line-height:{lh}px;font-weight:{weight};'
+def p(text, style="body", mb=None, weight=None, color=None):
+    mb = g if mb is None else mb
+    weight = TY[style]["weight"] if weight is None else weight
+    return (f'    <p style="margin:0 0 {mb}px;{TXT}{fs(style)}font-weight:{weight};'
             f'text-align:{START};">{links(text, color)}</p>\n')
 
 
@@ -106,12 +146,13 @@ def table(inner, width="100%", style="", attrs=""):
 
 
 def outline_btn(ctx, label, href, icon=None, full=False):
-    ic = (f'<td style="padding-{START}:4px;vertical-align:middle;">{img(ctx, icon, 16, 16, "", style="height:16px;")}</td>'
-          if icon else "")
-    inner = table(f'<tr><td style="font-family:{FONT};font-size:12px;line-height:17px;font-weight:700;color:#FFFFFF;'
+    b = K["button"]
+    ic = (f'<td style="padding-{START}:{b["icon_gap"]}px;vertical-align:middle;">'
+          f'{img(ctx, icon, b["icon"], b["icon"], "", style="height:%spx;" % b["icon"])}</td>' if icon else "")
+    inner = table(f'<tr><td style="font-family:{FONT};{fs("button")}font-weight:{TY["button"]["weight"]};color:{C["outline_button"]};'
                   f'white-space:nowrap;">{label}</td>{ic}</tr>', width="", style="margin:0 auto;")
-    return table(f'<tr><td align="center" style="border:1px solid #FFFFFF;border-radius:100px;padding:8px 12px;">'
-                 f'<a href="{href}" target="_blank" style="text-decoration:none;color:#FFFFFF;display:block;">{inner}</a></td></tr>',
+    return table(f'<tr><td align="center" style="border:{b["border"]} solid {C["outline_button"]};border-radius:{b["radius"]}px;padding:{b["pad"]};">'
+                 f'<a href="{href}" target="_blank" style="text-decoration:none;color:{C["outline_button"]};display:block;">{inner}</a></td></tr>',
                  width="100%" if full else "", style="margin:0 auto;")
 
 
@@ -134,14 +175,14 @@ def columns(cells, total, gap):
 # ---------------------------------------------------------------- bloques del body
 def b_hero(ctx, b):
     """Banner con degradado (estilo 'old'): solo para correos transaccionales de depósito/retiro/transferencia/formularios."""
-    icon = (f'<td valign="middle" style="padding-{END}:16px;width:39px;">{status_icon(ctx, b["icon"], b.get("alt", ""))}</td>'
+    size = K["icon"]["status"]
+    icon = (f'<td valign="middle" style="padding-{END}:{HERO["icon_gap"]}px;width:{size}px;">{status_icon(ctx, b["icon"], b.get("alt", ""))}</td>'
             if b.get("icon") else "")
-    bg = ("background-color:#0F0631;background-image:radial-gradient(ellipse at 100% 100%,rgba(235,0,82,0.55) 0%,rgba(235,0,82,0) 60%),"
-          "linear-gradient(100deg,#0F0631 37%,#9589E1 123%);")
-    title = (f'<td valign="middle"><h1 style="margin:0;font-family:{FONT};font-size:35px;line-height:42px;font-weight:800;'
-             f'color:#FFFFFF;text-align:{START};">{b["title"]}</h1></td>')
+    bg = f'background-color:{HERO["fallback"]};background-image:{HERO["background"]};'
+    title = (f'<td valign="middle"><h1 style="margin:0;font-family:{FONT};{fs("hero_title")}font-weight:{TY["hero_title"]["weight"]};'
+             f'color:{C["text"]};text-align:{START};">{b["title"]}</h1></td>')
     return f'''  <!-- ===== HERO (degradado) ===== -->
-  <tr><td bgcolor="#0F0631" height="222" valign="middle" style="{bg}height:222px;padding:0 {PAD}px;">
+  <tr><td bgcolor="{HERO["fallback"]}" height="{HERO["height"]}" valign="middle" style="{bg}height:{HERO["height"]}px;padding:0 {PAD}px;">
     {table(f"<tr>{icon}{title}</tr>", width="", attrs='align="center" ')}
   </td></tr>
 '''
@@ -152,8 +193,8 @@ def b_icon(ctx, b, mb):
 
 
 def b_title(ctx, b, mb):
-    return (f'    <h1 style="margin:0 0 {mb}px;font-family:{FONT};font-size:28px;line-height:34px;'
-            f'font-weight:800;color:#FFFFFF;text-align:{START};">{b["text"]}</h1>\n')
+    return (f'    <h1 style="margin:0 0 {mb}px;font-family:{FONT};{fs("h1")}'
+            f'font-weight:{TY["h1"]["weight"]};color:{C["text"]};text-align:{START};">{b["text"]}</h1>\n')
 
 
 def b_subtitle(ctx, b, mb):
@@ -181,58 +222,66 @@ def b_paragraph(ctx, b, mb):
 
 
 def b_heading(ctx, b, mb):
-    return p(b["text"], size=18, lh=25, mb=mb, weight=600)
+    return p(b["text"], style="section", mb=mb)
 
 
 def b_pill(ctx, b, mb):
     bg, fg = PILLS[b.get("variant", "warning")]
+    k = K["pill"]
     return (f'    <p style="margin:0 0 {mb}px;text-align:{START};"><span style="display:inline-block;background:{bg};color:{fg};'
-            f'font-family:{FONT};font-size:14px;line-height:20px;padding:8px 12px;border-radius:100px;">{b["text"]}</span></p>\n')
+            f'font-family:{FONT};{fs("body")}padding:{k["pad"]};border-radius:{k["radius"]}px;">{b["text"]}</span></p>\n')
 
 
-def card(inner, mb, pad="24px 32px", bg="#272336", radius=20, extra=""):
+def card(inner, mb, pad=None, bg=None, radius=None, extra=""):
+    pad = pad or K["card"]["pad"]
+    bg = bg or C["card"]
+    radius = K["card"]["radius"] if radius is None else radius
     return "    " + table(f'\n      <tr><td bgcolor="{bg}" style="background:{bg};border-radius:{radius}px;padding:{pad};{extra}">\n'
                           f'{inner}      </td></tr>\n    ', style=f"margin:0 0 {mb}px;") + "\n"
 
 
 def b_list_card(ctx, b, mb):
+    k = K["list_card"]
     items = b["items"]
     rows = ""
-    cell = f"font-family:{FONT};font-size:14px;line-height:20px;color:#FFFFFF;text-align:{START};"
+    cell = f"font-family:{FONT};{fs('body')}color:{C['text']};text-align:{START};"
     for i, it in enumerate(items):
-        pb = "0" if i == len(items) - 1 else "12px"
-        rows += (f'          <tr><td valign="top" width="18" style="width:18px;padding:0 0 {pb};{cell}">&bull;</td>'
+        pb = "0" if i == len(items) - 1 else f"{k['item_gap']}px"
+        rows += (f'          <tr><td valign="top" width="{k["bullet_width"]}" style="width:{k["bullet_width"]}px;padding:0 0 {pb};{cell}">&bull;</td>'
                  f'<td valign="top" style="padding:0 0 {pb};{cell}">{links(it)}</td></tr>\n')
-    pad = "24px 40px 24px 32px" if START == "right" else "24px 32px 24px 40px"
+    pad = k["pad_rtl"] if START == "right" else k["pad"]
     return "    <!-- Card de lista -->\n" + card(f"        {table(chr(10) + rows + '        ')}\n", mb, pad=pad)
 
 
 def detail_rows(rows):
+    k = K["card"]
     out = ""
-    cell = f"font-family:{FONT};font-size:14px;line-height:20px;color:#FFFFFF;"
+    cell = f"font-family:{FONT};{fs('body')}color:{C['text']};"
     for i, row in enumerate(rows):
-        k, v = row[0], row[1]
-        pb = "0" if i == len(rows) - 1 else "20px"
-        val = f"{v}&nbsp;&nbsp;{{COPY}}" if len(row) > 2 and row[2] == "copy" else v
-        out += (f'          <tr><td valign="top" style="padding:0 0 {pb};padding-{END}:12px;{cell}text-align:{START};">{k}</td>'
-                f'<td valign="top" align="{END}" style="padding:0 0 {pb};{cell}font-weight:600;text-align:{END};">{val}</td></tr>\n')
+        key, v = row[0], row[1]
+        pb = "0" if i == len(rows) - 1 else f"{k['row_gap']}px"
+        val = f"{v}{K['code']['copy_gap']}{{COPY}}" if len(row) > 2 and row[2] == "copy" else v
+        out += (f'          <tr><td valign="top" style="padding:0 0 {pb};padding-{END}:{k["label_gap"]}px;{cell}text-align:{START};">{key}</td>'
+                f'<td valign="top" align="{END}" style="padding:0 0 {pb};{cell}font-weight:{TY["body_bold"]["weight"]};text-align:{END};">{val}</td></tr>\n')
     return out
 
 
 def copy_icon(ctx, doc):
     if "{COPY}" not in doc:
         return doc
-    return doc.replace("{COPY}", img(ctx, "ui-copy", 20, 20, "", display="inline-block", style="height:20px;vertical-align:middle;"))
+    s = K["copy_icon"]["size"]
+    return doc.replace("{COPY}", img(ctx, "ui-copy", s, s, "", display="inline-block", style=f"height:{s}px;vertical-align:middle;"))
 
 
 def b_details_card(ctx, b, mb):
+    k = K["card"]
     out = b_heading(ctx, {"text": b["title"]}, g) if b.get("title") else ""
     if b.get("sections"):
         inner = ""
         for j, s in enumerate(b["sections"]):
             if s.get("title"):
-                inner += (f'        <p style="margin:{0 if j == 0 else 24}px 0 16px;{TXT}font-size:14px;line-height:20px;'
-                          f'font-weight:600;text-align:{START};">{s["title"]}</p>\n')
+                inner += (f'        <p style="margin:{0 if j == 0 else k["section_gap"]}px 0 {k["section_title_gap"]}px;{TXT}{fs("body_bold")}'
+                          f'font-weight:{TY["body_bold"]["weight"]};text-align:{START};">{s["title"]}</p>\n')
             inner += f"        {table(chr(10) + detail_rows(s['rows']) + '        ')}\n"
     else:
         inner = f"        {table(chr(10) + detail_rows(b['rows']) + '        ')}\n"
@@ -240,76 +289,86 @@ def b_details_card(ctx, b, mb):
 
 
 def b_code(ctx, b, mb):
-    out = b_heading(ctx, {"text": b["label"]}, 16) if b.get("label") else ""
-    inner = (f'        <p style="margin:0;{TXT}font-size:14px;line-height:20px;font-weight:600;letter-spacing:1px;'
-             f'text-align:{START};">{b["code"]}&nbsp;&nbsp;{{COPY}}</p>\n')
+    k = K["code"]
+    out = b_heading(ctx, {"text": b["label"]}, k["label_gap"]) if b.get("label") else ""
+    inner = (f'        <p style="margin:0;{TXT}{fs("body_bold")}font-weight:{TY["body_bold"]["weight"]};letter-spacing:{k["letter_spacing"]}px;'
+             f'text-align:{START};">{b["code"]}{k["copy_gap"]}{{COPY}}</p>\n')
     return out + "    <!-- Código de un solo uso -->\n" + copy_icon(ctx, card(inner, mb))
 
 
 def b_alert(ctx, b, mb):
+    k = K["alert"]
     inner = "        " + table(
-        f'<tr><td valign="top" width="16" style="width:16px;padding-top:1px;padding-{END}:8px;">'
-        f'{img(ctx, "ui-info", 16, 16, "", style="height:16px;")}</td>'
-        f'<td valign="top" style="font-family:{FONT};font-size:12px;line-height:17px;color:#FFFFFF;text-align:{START};">'
+        f'<tr><td valign="top" width="{k["icon"]}" style="width:{k["icon"]}px;padding-top:1px;padding-{END}:{k["icon_gap"]}px;">'
+        f'{img(ctx, "ui-info", k["icon"], k["icon"], "", style="height:%spx;" % k["icon"])}</td>'
+        f'<td valign="top" style="font-family:{FONT};{fs("alert")}color:{C["text"]};text-align:{START};">'
         f'{links(b["text"])}</td></tr>') + "\n"
-    return "    <!-- Aviso -->\n" + card(inner, mb, pad="16px", bg="#0F0631", radius=8, extra="border:1px solid #A898FB;")
+    return "    <!-- Aviso -->\n" + card(inner, mb, pad=k["pad"], bg=C["surface"], radius=k["radius"],
+                                        extra=f"border:{k['border']} solid {C['border_accent']};")
 
 
 def b_note(ctx, b, mb):
+    k = K["note"]
     ic = ""
     if b.get("icon"):
-        asset, w, h = {"apple": ("brand-apple", 15, 18)}.get(b["icon"], ("icon-" + b["icon"], 18, 18))
-        ic = f'<td valign="middle" style="padding-{END}:10px;">{img(ctx, asset, w, h, "", style=f"height:{h}px;")}</td>'
-    inner = table(f'<tr>{ic}<td valign="middle" style="font-family:{FONT};font-size:14px;line-height:20px;color:#FFFFFF;'
-                  f'text-align:{START};">{links(b["text"], "#EFF4FF")}</td></tr>', width="")
-    return ("    <!-- Nota -->\n    " + table(f'<tr><td style="border:1px solid #A898FB;border-radius:8px;padding:12px;">{inner}</td></tr>',
+        n = K["icon"]["note_icon"]
+        asset, w, h = {"apple": ("brand-apple", 15, 18)}.get(b["icon"], ("icon-" + b["icon"], n, n))
+        ic = f'<td valign="middle" style="padding-{END}:{k["icon_gap"]}px;">{img(ctx, asset, w, h, "", style=f"height:{h}px;")}</td>'
+    inner = table(f'<tr>{ic}<td valign="middle" style="font-family:{FONT};{fs("body")}color:{C["text"]};'
+                  f'text-align:{START};">{links(b["text"], C["link_note"])}</td></tr>', width="")
+    return ("    <!-- Nota -->\n    " + table(f'<tr><td style="border:{k["border"]} solid {C["border_accent"]};border-radius:{k["radius"]}px;padding:{k["pad"]}px;">{inner}</td></tr>',
                                              width="", style=f"margin:0 0 {mb}px;") + "\n")
 
 
 def downloads(ctx, items):
-    inner_w = CW - 48
+    k = K["steps"]
+    inner_w = CW - 2 * k["pad"]
     w = inner_w // len(items)
     cells = []
     for d in items:
         asset, aw, ah, label = PLATFORMS[d["platform"]]
         logo = img(ctx, asset, aw, ah, label, style=f"height:{ah}px;margin:0 auto;")
         btn = outline_btn(ctx, d.get("label", label), d.get("href", "#"), icon="ui-download")
-        cells.append((w, table(f'<tr><td align="center" valign="bottom" height="28" style="height:28px;">{logo}</td></tr>'
-                             f'<tr><td align="center" style="padding:12px 0 0;">{btn}</td></tr>', style="margin:0 auto;")))
+        cells.append((w, table(f'<tr><td align="center" valign="bottom" height="{k["logo_row"]}" style="height:{k["logo_row"]}px;">{logo}</td></tr>'
+                             f'<tr><td align="center" style="padding:{k["button_gap"]}px 0 0;">{btn}</td></tr>', style="margin:0 auto;")))
     if len(cells) == 4:  # pares con 2 columnas fluidas: 1×4 en desktop, 2×2 en mobile
         half = inner_w // 2
         pair = lambda a, b: table(f'<tr><td width="50%" valign="bottom" style="width:50%;">{a[1]}</td>'
                                   f'<td width="50%" valign="bottom" style="width:50%;">{b[1]}</td></tr>')
-        return columns([(half, pair(cells[0], cells[1])), (half, pair(cells[2], cells[3]))], inner_w, 16)
-    return columns(cells, inner_w, 16)
+        return columns([(half, pair(cells[0], cells[1])), (half, pair(cells[2], cells[3]))], inner_w, k["column_gap"])
+    return columns(cells, inner_w, k["column_gap"])
 
 
 def b_steps(ctx, b, mb):
+    k = K["steps"]
     out = "    <!-- Pasos -->\n"
     items = b["items"]
     for i, s in enumerate(items, 1):
         head = "        " + table(
-            f'<tr><td valign="middle" style="padding-{END}:16px;">{status_icon(ctx, s["icon"], "", size=36)}</td>'
-            f'<td valign="middle" style="font-family:{FONT};font-size:18px;line-height:25px;font-weight:600;color:#FFFFFF;'
+            f'<tr><td valign="middle" style="padding-{END}:{k["icon_gap"]}px;">{status_icon(ctx, s["icon"], "", size=K["icon"]["step"])}</td>'
+            f'<td valign="middle" style="font-family:{FONT};{fs("section")}font-weight:{TY["section"]["weight"]};color:{C["text"]};'
             f'text-align:{START};">{i}. {s["title"]}</td></tr>', width="") + "\n"
-        body = (f'        <p style="margin:24px 0 0;{TXT}font-size:14px;line-height:20px;text-align:{START};">{links(s["text"])}</p>\n'
+        body = (f'        <p style="margin:{k["text_gap"]}px 0 0;{TXT}{fs("body")}text-align:{START};">{links(s["text"])}</p>\n'
                 if s.get("text") else "")
-        dl = (f'        <div style="height:32px;line-height:32px;font-size:0;">&nbsp;</div>\n{downloads(ctx, s["downloads"])}'
+        dg = k["downloads_gap"]
+        dl = (f'        <div style="height:{dg}px;line-height:{dg}px;font-size:0;">&nbsp;</div>\n{downloads(ctx, s["downloads"])}'
               if s.get("downloads") else "")
-        foot = (f'        <p style="margin:20px 0 0;{TXT}font-size:11px;line-height:15px;font-style:italic;text-align:{START};">'
+        foot = (f'        <p style="margin:{k["footnote_gap"]}px 0 0;{TXT}{fs("legal")}font-style:italic;text-align:{START};">'
                 f'{s["footnote"]}</p>\n' if s.get("footnote") else "")
-        out += card(head + body + dl + foot, mb if i == len(items) else g, pad="24px", bg="#0F0631", radius=12)
+        out += card(head + body + dl + foot, mb if i == len(items) else g, pad=f'{k["pad"]}px', bg=C["surface"], radius=k["radius"])
     return out
 
 
 def b_cta(ctx, b, mb):
+    k = K["cta"]
+    t = TY["cta"]
     label, href = b["label"], b.get("href", "[cabinet_url]")
-    w = max(140, int(len(label) * 10 + 48))
+    w = max(k["min_width"], int(len(label) * 10 + 48))
     return f'''    <!-- CTA (bulletproof) -->
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:0 0 {mb}px;">
-      <tr><td align="center" bgcolor="#EB0052" style="background:#EB0052;border-radius:100px;mso-padding-alt:16px 24px;">
-        <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{href}" style="height:56px;v-text-anchor:middle;width:{w}px;" arcsize="50%" stroke="f" fillcolor="#EB0052"><w:anchorlock/><center style="color:#FFFFFF;font-family:Arial,sans-serif;font-size:17px;font-weight:600;">{label}</center></v:roundrect><![endif]-->
-        <!--[if !mso]><!--><a href="{href}" target="_blank" style="display:inline-block;padding:16px 24px;font-family:{FONT};font-size:17px;line-height:24px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:100px;">{label}</a><!--<![endif]-->
+      <tr><td align="center" bgcolor="{C["cta"]}" style="background:{C["cta"]};border-radius:{k["radius"]}px;mso-padding-alt:{k["pad"]};">
+        <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{href}" style="height:{k["height"]}px;v-text-anchor:middle;width:{w}px;" arcsize="50%" stroke="f" fillcolor="{C["cta"]}"><w:anchorlock/><center style="color:{C["cta_label"]};font-family:{TY["cta_outlook_font"]};font-size:{t["size"]}px;font-weight:{t["weight"]};">{label}</center></v:roundrect><![endif]-->
+        <!--[if !mso]><!--><a href="{href}" target="_blank" style="display:inline-block;padding:{k["pad"]};font-family:{FONT};{fs("cta")}font-weight:{t["weight"]};color:{C["cta_label"]};text-decoration:none;border-radius:{k["radius"]}px;">{label}</a><!--<![endif]-->
       </td></tr>
     </table>
 '''
@@ -347,96 +406,86 @@ def render_body(ctx, blocks):
     return out
 
 
-# ---------------------------------------------------------------- plantilla
-HEAD = '''<!DOCTYPE html>
-<html lang="%(lang)s" dir="%(dir)s" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="x-apple-disable-message-reformatting">
-<meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
-<meta name="color-scheme" content="dark">
-<meta name="supported-color-schemes" content="dark">
-<title>%(subject)s</title>
-<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
-<!--[if !mso]><!--><link href="https://fonts.googleapis.com/css2?family=%(gfont)s&display=swap" rel="stylesheet"><!--<![endif]-->
-</head>
-<body dir="%(dir)s" style="margin:0;padding:0;background:#272336;-webkit-text-size-adjust:100%%;-ms-text-size-adjust:100%%;">
-<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">%(preheader)s&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>
-<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0" bgcolor="#272336" style="background:#272336;border-collapse:collapse;">
-<tr><td align="center" valign="top" style="padding:50px 0;">
-<!--[if mso]><table role="presentation" width="%(w)s" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td><![endif]-->
-<table role="presentation" dir="%(dir)s" width="%(w)s" cellpadding="0" cellspacing="0" border="0" style="width:100%%;max-width:%(w)spx;margin:0 auto;border-collapse:collapse;">
-
-  <!-- ===== HEADER ===== -->
-  <tr><td align="center" bgcolor="#000000" style="background:#000000;padding:14px 0;">
-    %(logo)s
-  </td></tr>
-
-%(hero)s  <!-- ===== BODY ===== -->
-  <tr><td bgcolor="#080B18" style="background:#080B18;padding:%(pad)spx;font-family:%(font)s;color:#FFFFFF;text-align:%(start)s;">
-'''
+# ---------------------------------------------------------------- header, more, footer (según base/variants.json)
+def render_header(ctx, name):
+    logos = variant("header", name)["logos"]
+    tags = [logo(ctx, l, style="margin:0 auto;") for l in logos]
+    if len(tags) == 1:
+        return tags[0]
+    return table("<tr>" + "".join(f'<td style="padding:0 12px;">{t}</td>' for t in tags) + "</tr>", width="", attrs='align="center" ')
 
 
 def render_more(ctx, more):
     if not more:
         return ""
     more = more if isinstance(more, dict) else {}
-    cw = (CW - 24) // 2
-    specs = [("brand-tradegatehub", 32, 40, LOC["academy"], more.get("academy_url", "[academy_url]")),
-             ("brand-up", 42, 32, LOC["insights"], more.get("blog_url", "[blog_url]"))]
+    k = K["promo"]
+    cw = (CW - k["gap"]) // 2
     cells = []
-    for asset, w, h, (title, text, btn), href in specs:
-        head = table(f'<tr><td valign="middle" style="padding-{END}:16px;">{img(ctx, asset, w, h, title, style=f"height:{h}px;")}</td>'
-                     f'<td valign="middle" style="font-family:{FONT};font-size:17px;line-height:24px;font-weight:600;color:#FFFFFF;'
+    for c in VARIANTS["more_from_tradeview"]["cards"]:
+        asset, w, h = c["asset"], c["width"], c["height"]
+        title, text, btn = LOC[c["text"]]
+        href = more.get(c["link"], f"[{c['link']}]")
+        head = table(f'<tr><td valign="middle" style="padding-{END}:{k["logo_gap"]}px;">{img(ctx, asset, w, h, title, style=f"height:{h}px;")}</td>'
+                     f'<td valign="middle" style="font-family:{FONT};{fs("card_title")}font-weight:{TY["card_title"]["weight"]};color:{C["text"]};'
                      f'text-align:{START};">{title}</td></tr>', width="")
-        body = (f'<p style="margin:20px 0;{TXT}font-size:14px;line-height:20px;text-align:{START};">{text}</p>'
+        body = (f'<p style="margin:{k["text_gap"]}px 0;{TXT}{fs("body")}text-align:{START};">{text}</p>'
                 f'{outline_btn(ctx, btn, href, full=True)}')
-        cells.append((cw, table(f'<tr><td style="border:1px solid #3D326E;border-radius:12px;padding:24px;">{head}{body}</td></tr>')))
+        cells.append((cw, table(f'<tr><td style="border:1px solid {C["border_promo"]};border-radius:{k["radius"]}px;padding:{k["card_pad"]}px;">{head}{body}</td></tr>')))
     return f'''
   <!-- ===== MORE FROM TRADEVIEW ===== -->
-  <tr><td bgcolor="#0F0631" style="background:#0F0631;padding:24px {PAD}px;">
-    <p style="margin:0 0 20px;{TXT}font-size:18px;line-height:25px;font-weight:600;text-align:{START};">{LOC["more_title"]}</p>
-{columns(cells, CW, 24)}  </td></tr>
+  <tr><td bgcolor="{C["surface"]}" style="background:{C["surface"]};padding:{LY["promo_pad_y"]}px {PAD}px;">
+    <p style="margin:0 0 {k["title_gap"]}px;{TXT}{fs("section")}font-weight:{TY["section"]["weight"]};text-align:{START};">{LOC["more_title"]}</p>
+{columns(cells, CW, k["gap"])}  </td></tr>
 '''
 
 
-def render_tail(ctx, entity, more, show_help=True):
-    socials = DELIVERY["socials"]
-    cells = ""
-    for i, (n, alt, href) in enumerate(socials):
-        pad = "" if i == len(socials) - 1 else f"padding-{END}:24px;"
-        cells += (f'<td valign="middle" style="{pad}"><a href="{href}" target="_blank" style="text-decoration:none;">'
-                  f'{img(ctx, "social-" + n, 48, 48, alt, fluid=True)}</a></td>')
-    left = (f'<p style="margin:0 0 16px;{TXT}font-size:17px;line-height:24px;font-weight:600;text-align:{START};">{LOC["footer_title"]}</p>'
-            + table(f"<tr>{cells}</tr>", width="408", style="width:100%;max-width:408px;"))
-    right = table(f'<tr><td align="{END}" style="text-align:{END};padding-top:4px;">'
-                  f'{img(ctx, "tradeview-white", 197, 31, "Tradeview Markets", display="inline-block")}'
-                  f'<div style="height:21px;line-height:21px;font-size:0;">&nbsp;</div>'
-                  f'{img(ctx, "edge-white", 125, 38, "EDGE Instant Liquidity Connector", display="inline-block")}</td></tr>')
-    ldir = LOC.get("legal_dir", LOC["dir"])  # el legal en árabe viene en inglés en Figma
-    L = f"font-family:{FONT};font-size:11px;line-height:15px;color:#FFFFFF;text-align:{'right' if ldir == 'rtl' else 'left'};"
-    legal = LOC["legal"][entity]
-    legal_html = "".join(f'    <p dir="{ldir}" style="margin:{"32px" if i == 0 else "0"} 0 {"0" if i == len(legal) - 1 else "15px"};{L}">{t}</p>\n'
-                         for i, t in enumerate(legal))
+def render_signature(show_help=True):
     email = LOC["support_email"]
-    help_ = p(LOC["help"].format(email=f'<a href="mailto:{email}">{email}</a>'), mb=G, color="#D1E0FF") if show_help else ""
-    return f'''    <!-- Ayuda + firma -->
-{help_}{p(LOC["signature"], mb=g, weight=600)}    <p style="margin:0;font-family:{FONT};font-size:14px;line-height:20px;text-align:{START};"><a href="https://www.tradeviewmarkets.com" target="_blank" style="color:#A898FB;text-decoration:underline;">www.tradeviewmarkets.com</a></p>
-  </td></tr>
-{render_more(ctx, more)}
-  <!-- ===== FOOTER ({entity.upper()}) ===== -->
-  <tr><td bgcolor="#000000" style="background:#000000;padding:56px {PAD}px;font-family:{FONT};color:#FFFFFF;">
-{columns([(408, left), (197, right)], CW, 24)}{legal_html}  </td></tr>
+    help_ = p(LOC["help"].format(email=f'<a href="mailto:{email}">{email}</a>'), mb=G, color=C["link_support"]) if show_help else ""
+    return (f'{help_}{p(LOC["signature"], mb=g, weight=TY["body_bold"]["weight"])}'
+            f'    <p style="margin:0;font-family:{FONT};{fs("body")}text-align:{START};"><a href="https://www.tradeviewmarkets.com" target="_blank" '
+            f'style="color:{C["link"]};text-decoration:underline;">www.tradeviewmarkets.com</a></p>\n')
 
-</table>
-<!--[if mso]></td></tr></table><![endif]-->
-</td></tr>
-</table>
-</body>
-</html>
-'''
+
+def render_footer(ctx, entity, name):
+    k = K["footer"]
+    v = variant("footer", name)
+    left = f'<p style="margin:0 0 {k["title_gap"]}px;{TXT}{fs("card_title")}font-weight:{TY["card_title"]["weight"]};text-align:{START};">{LOC["footer_title"]}</p>'
+    if v.get("socials"):
+        socials = v["socials"]
+        cells = ""
+        for i, s in enumerate(socials):
+            pad = "" if i == len(socials) - 1 else f"padding-{END}:{k['social_gap']}px;"
+            cells += (f'<td valign="middle" style="{pad}"><a href="{s["href"]}" target="_blank" style="text-decoration:none;">'
+                      f'{img(ctx, s["asset"], k["social"], k["social"], s["alt"], fluid=True, url=s.get("url"))}</a></td>')
+        left += table(f"<tr>{cells}</tr>", width=str(k["left_width"]), style=f"width:100%;max-width:{k['left_width']}px;")
+    spacer = f'<div style="height:{k["logo_gap"]}px;line-height:{k["logo_gap"]}px;font-size:0;">&nbsp;</div>'
+    logos = spacer.join(logo(ctx, l, display="inline-block") for l in v["logos"])
+    right = table(f'<tr><td align="{END}" style="text-align:{END};padding-top:{k["logo_pad_top"]}px;">{logos}</td></tr>')
+    ldir = LOC.get("legal_dir", LOC["dir"])  # el legal en árabe viene en inglés en Figma
+    L = f"font-family:{FONT};{fs('legal')}color:{C['text']};text-align:{'right' if ldir == 'rtl' else 'left'};"
+    legal = LOC["legal"][entity]
+    legal_html = "".join(f'    <p dir="{ldir}" style="margin:{str(k["legal_top"]) + "px" if i == 0 else "0"} 0 '
+                         f'{"0" if i == len(legal) - 1 else str(k["legal_gap"]) + "px"};{L}">{t}</p>\n'
+                         for i, t in enumerate(legal))
+    return columns([(k["left_width"], left), (k["right_width"], right)], CW, k["column_gap"]) + legal_html
+
+
+def fill_skeleton(values, slots):
+    """Rellena base.html: primero los @@estilos/valores@@, después los <!-- SLOT:... --> con el contenido."""
+    def token(m):
+        key = m.group(1)
+        if key in values:
+            return str(values[key])
+        node = TOKENS
+        for part in key.split("."):
+            node = node[part]
+        return str(node["value"] if isinstance(node, dict) else node)
+    doc = re.sub(r"@@([\w.]+)@@", token, SKELETON)
+    for name, content in slots.items():
+        doc = doc.replace(f"<!-- SLOT:{name} -->", content)
+    return doc
 
 
 def render(spec, spec_dir):
@@ -449,11 +498,13 @@ def render(spec, spec_dir):
     validate(blocks)
     hero = b_hero(ctx, blocks[0]) if blocks and blocks[0]["type"] == "hero" else ""
     body_blocks = blocks[1:] if hero else blocks
-    logo = img(ctx, "tradeview-color", 170, 29, "Tradeview Markets", style="margin:0 auto;")
-    doc = HEAD % {"subject": html.escape(spec["subject"]), "preheader": html.escape(spec.get("preheader", "")),
-                  "logo": logo, "font": FONT, "lang": lang, "dir": LOC["dir"], "gfont": LOC["gfont"],
-                  "start": START, "hero": hero, "w": W, "pad": PAD}
-    doc += render_body(ctx, body_blocks) + render_tail(ctx, entity, spec.get("more_from_tradeview"), spec.get("help", True))
+    values = {"lang": lang, "dir": LOC["dir"], "subject": html.escape(spec["subject"]), "gfont": LOC["gfont"],
+              "preheader": html.escape(spec.get("preheader", "")), "font": FONT, "start": START, "entity": entity.upper()}
+    slots = {"header": render_header(ctx, spec.get("header", "standard")), "hero": hero,
+             "body": render_body(ctx, body_blocks), "signature": render_signature(spec.get("help", True)),
+             "more": render_more(ctx, spec.get("more_from_tradeview")),
+             "footer": render_footer(ctx, entity, spec.get("footer", "standard"))}
+    doc = fill_skeleton(values, slots)
     doc = doc.replace("{{year}}", YEAR)
     for k, url in DELIVERY["links"].items():
         doc = doc.replace(k, url.format(lang=lang))
@@ -498,18 +549,45 @@ def svg_inline(name, tag):
                                f'aria-label="{get("alt")}" style="{get("style")}"', 1)
 
 
-def to_production(doc, base):
-    """Imágenes a S3 y variables a Jinja. Devuelve (html, variables sin mapear)."""
-    doc = re.sub(r'\sdata-svg="[^"]*"', "", doc).replace("{ASSET}", base)
+def to_production(doc):
+    """Imágenes a su URL de S3 y variables a Jinja. Devuelve (html, variables sin mapear, imágenes sin URL)."""
+    doc = re.sub(r'\sdata-(?:svg|remote)="[^"]*"', "", doc)
+    registered = DELIVERY.get("images", {})
+    missing = sorted(set(f for f in re.findall(r"\{ASSET\}([\w.\-]+)", doc) if f not in registered))
+    doc = re.sub(r"\{ASSET\}([\w.\-]+)", lambda m: registered.get(m.group(1), f"[S3:{m.group(1)}]"), doc)
     for k, v in DELIVERY["variables"].items():
         doc = doc.replace(k, v)
     visible = re.sub(r"<!--.*?-->|<[^>]+>", " ", doc, flags=re.S)
     left = sorted(set(re.findall(r"\[[A-Z][^\]]*\]|\([a-z][\w ]*\)", visible)) |
                   set(re.findall(r'href="(\[[^\]]+\])"', doc)))
-    return doc, left
+    return doc, left, missing
+
+
+REMOTE = {}
+
+
+def remote_data_uri(url):
+    """Descarga una imagen de S3 una vez por corrida y la devuelve como data URI (None si no hay conexión)."""
+    if url not in REMOTE:
+        try:
+            with urllib.request.urlopen(url, timeout=15) as r:
+                REMOTE[url] = "data:image/png;base64," + base64.b64encode(r.read()).decode()
+        except Exception:
+            REMOTE[url] = None
+            print(f"  ⚠ no se pudo descargar {url}: el preview usa la copia local")
+    return REMOTE[url]
+
+
+def embed_remote(m):
+    tag = m.group(0)
+    uri = remote_data_uri(re.search(r'src="([^"]+)"', tag).group(1))
+    if not uri:
+        return tag.replace(' data-remote="1"', "")  # sigue con data-svg: se reemplaza por la copia local
+    return re.sub(r'\sdata-(?:svg|remote)="[^"]*"', "", re.sub(r'src="[^"]+"', f'src="{uri}"', tag, count=1))
 
 
 def to_preview(doc, ctx):
+    doc = re.sub(r'<img[^>]*data-remote="1"[^>]*>', embed_remote, doc)
     doc = re.sub(r'<img[^>]*data-svg="([^"]+)"[^>]*>', lambda m: svg_inline(m.group(1), m.group(0)), doc)
     for name, path in ctx.images.items():
         mime = "image/" + ("jpeg" if path.suffix.lower() in (".jpg", ".jpeg") else path.suffix.lower().lstrip("."))
@@ -519,7 +597,7 @@ def to_preview(doc, ctx):
 
 
 # ---------------------------------------------------------------- entrega
-def write_index(out, specs, base):
+def write_index(out, specs):
     tag = lambda s: (f'<small>({s.get("lang", "en")} · {s.get("entity", "ltd").upper()})</small>'
                      + (' <small style="color:#FFE8C2">· BORRADOR</small>' if s["_draft"] else ""))
     li = lambda folder, ext: "\n".join(f'<li><a href="{folder}/{s["_name"]}.{ext}">{html.escape(s["subject"])}</a> {tag(s)}</li>'
@@ -529,7 +607,7 @@ def write_index(out, specs, base):
 <body style="margin:0;background:#272336;color:#fff;font-family:'Plus Jakarta Sans',Inter,Arial,sans-serif">
 <main style="max-width:640px;margin:48px auto;padding:40px;background:#080B18">
 <h1 style="font-size:26px;margin:0 0 8px">Correos transaccionales · Tradeview Markets</h1>
-<p style="background:#FFE8C2;color:#6B3A00;padding:12px 16px;border-radius:16px;font-size:14px">Los HTML de "Producción" cargan las imágenes desde S3 ({base}). Hasta que Dani Peña suba la carpeta <b>produccion/subir-a-s3/</b>, se verán sin imágenes: para revisar usa Preview o PDF.</p>
+<p style="background:#FFE8C2;color:#6B3A00;padding:12px 16px;border-radius:16px;font-size:14px">Los logos y redes ya están en S3. Las demás imágenes de estos correos están en <b>produccion/subir-a-s3/</b>: hay que pedirle a desarrollo que las suba y registrar sus URLs; mientras tanto, en "Producción" se ven como <b>[S3:archivo]</b>. Para revisar el diseño usa Preview o PDF.</p>
 <h2 style="font-size:17px;margin:32px 0 12px">Preview (archivo único, se ve en cualquier lugar)</h2><ul>{li("preview", "html")}</ul>
 <h2 style="font-size:17px;margin:32px 0 12px">PDF (para aprobación)</h2><ul>{li("pdf", "pdf")}</ul>
 <h2 style="font-size:17px;margin:32px 0 12px">Producción (para desarrollo)</h2><ul>{li("produccion", "html")}</ul>
@@ -542,14 +620,15 @@ CARPETAS
                           NO sirve para enviar.
 - produccion/             HTML finales para desarrollo: un solo archivo por correo, tablas, CSS inline,
                           imágenes desde S3 y variables Jinja {{{{ data['...'] }}}}.
-- produccion/subir-a-s3/  Imágenes que Dani Peña tiene que subir a:
-                          {base}
+- produccion/subir-a-s3/  Imágenes de estos correos que todavía no están en S3 (se le piden a desarrollo).
+                          Los logos del header/footer y las redes ya están en S3 y no aparecen aquí.
 
 NOMBRES DE ARCHIVO
 <correo>-<idioma>-<entidad>.html  ·  ej. deposit-confirmed-es-sac.html
 
 PARA DESARROLLO
-1. Subir produccion/subir-a-s3/*.png a la carpeta de S3 indicada (mismos nombres).
+1. Subir produccion/subir-a-s3/*.png a S3 y pasar la URL de cada una. Donde el HTML diga
+   [S3:nombre-del-archivo.png] va esa URL (o se registra y se regeneran los correos).
 2. Usar produccion/<correo>-<idioma>-<entidad>.html como plantilla. Las variables ya vienen en Jinja;
    si quedó alguna entre corchetes [ ], falta definir su key en el backend.
 3. Probar en Gmail (web/app), Outlook y Apple Mail, a 390 y 750 px. El árabe se revisa en RTL.
@@ -560,7 +639,6 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("specs", nargs="+")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--asset-base", default=DELIVERY["asset_base"], help="URL base de imágenes en producción")
     ap.add_argument("--no-pdf", action="store_true")
     ap.add_argument("--screenshots", action="store_true")
     a = ap.parse_args()
@@ -569,7 +647,6 @@ def main():
     prod, prev, pdfd, s3 = out / "produccion", out / "preview", out / "pdf", out / "produccion" / "subir-a-s3"
     for d in (s3, prev):
         d.mkdir(parents=True, exist_ok=True)
-    base = a.asset_base if a.asset_base.endswith("/") else a.asset_base + "/"
 
     jobs = []
     for sp in a.specs:
@@ -586,7 +663,7 @@ def main():
         print(f"• {name}")
         doc, ctx = render(spec, sp.parent)
         issues = spec["_draft"] = copy_status(spec)
-        p_, left = to_production(doc, base)
+        p_, left, missing = to_production(doc)
         if "<style" in p_ or re.search(r"display:\s*(inline-)?flex", p_):
             sys.exit("  ✖ El HTML de producción rompe el estándar de dev (<style> o flexbox).")
         preview = to_preview(doc, ctx)
@@ -596,10 +673,8 @@ def main():
         else:
             (prod / f"{name}.html").write_text(p_, encoding="utf-8")
         (prev / f"{name}.html").write_text(preview, encoding="utf-8")
-        for f in ctx.pngs:
-            shutil.copy(PNG_DIR / f, s3 / f)
-        for iname, path in ctx.images.items():
-            shutil.copy(path, s3 / iname)
+        for f in missing:
+            shutil.copy(PNG_DIR / f if (PNG_DIR / f).exists() else ctx.images[f], s3 / f)
         kb = len(p_.encode()) / 1024
         print(f"  produccion {kb:.1f} KB" + ("  ⚠ supera 100 KB (Gmail recorta)" if kb > 100 else ""))
         jinja = sorted(set(re.findall(r"\{\{ data\['(\w+)'\] \}\}", p_)))
@@ -607,9 +682,11 @@ def main():
             print(f"  variables Jinja: {', '.join(jinja)}")
         if left:
             print(f"  ⚠ sin key de backend (pedir a dev y agregar en delivery.json): {', '.join(left)}")
+        if missing:
+            print(f"  ⚠ imágenes sin URL de S3 (pedir a desarrollo y registrar en delivery.json → images): {', '.join(missing)}")
         specs.append(spec)
 
-    write_index(out, specs, base)
+    write_index(out, specs)
 
     if not a.no_pdf or a.screenshots:
         try:

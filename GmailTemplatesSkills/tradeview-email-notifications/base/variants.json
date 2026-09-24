@@ -1,0 +1,94 @@
+{
+  "_about": "Variantes visuales de header y footer. Cada correo elige una con \"header\" / \"footer\" en su spec (default \"standard\"). El texto legal del footer NO va aquí: sale de locales/<idioma>.json según la entidad (ltd / sac). Para un caso especial (ej. co-branding), agrega una variante nueva y su SVG/PNG en assets/; no edites el correo a mano. Las imágenes con \"url\" ya están en el S3 de Tradeview (las subió desarrollo) y el correo las usa directo; \"asset\" es la copia local de respaldo.",
+  "header": {
+    "standard": {
+      "_figma": "Header desktop (node 9178-473): logo a color centrado",
+      "logos": [
+        {
+          "asset": "tradeview-color",
+          "width": 170,
+          "height": 29,
+          "alt": "Tradeview Markets",
+          "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/Logotvmarket-header.png"
+        }
+      ]
+    }
+  },
+  "footer": {
+    "standard": {
+      "_figma": "Footer (node 9442-14097): título + redes a un lado, logos al otro; legal por entidad e idioma",
+      "logos": [
+        {
+          "asset": "tradeview-white",
+          "width": 197,
+          "height": 30,
+          "alt": "Tradeview Markets",
+          "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/Logotvmarket-footer.png"
+        },
+        {
+          "asset": "edge-white",
+          "width": 125,
+          "height": 38,
+          "alt": "EDGE Instant Liquidity Connector",
+          "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/logoEDGE-Footer.png"
+        }
+      ],
+      "socials": [
+        {
+          "asset": "social-linkedin",
+          "alt": "LinkedIn",
+          "href": "https://www.linkedin.com/company/tradeview-forex",
+          "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/Icono-linkedin.png"
+        },
+        {
+          "asset": "social-instagram",
+          "alt": "Instagram",
+          "href": "https://www.instagram.com/tradeviewmarkets/",
+          "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/Icono-Instagram.png"
+        },
+        {
+          "asset": "social-youtube",
+          "alt": "YouTube",
+          "href": "https://www.youtube.com/channel/UCpPf9pAQj4n28hT65QIzRXA",
+          "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/Icono-Youtube.png"
+        },
+        {
+          "asset": "social-tiktok",
+          "alt": "TikTok",
+          "href": "https://www.tiktok.com/@tradeviewmarkets",
+          "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/Icono-Tiktok.png"
+        },
+        {
+          "asset": "social-facebook",
+          "alt": "Facebook",
+          "href": "https://www.facebook.com/TradeviewMarkets/",
+          "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/Icono-Facebook.png"
+        },
+        {
+          "asset": "social-x",
+          "alt": "X",
+          "href": "https://x.com/Tradeview_",
+          "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/Icono-x.png"
+        }
+      ]
+    }
+  },
+  "more_from_tradeview": {
+    "cards": [
+      {
+        "asset": "brand-tradegatehub",
+        "width": 32,
+        "height": 40,
+        "text": "academy",
+        "link": "academy_url"
+      },
+      {
+        "asset": "brand-up",
+        "width": 42,
+        "height": 32,
+        "text": "insights",
+        "link": "blog_url"
+      }
+    ]
+  }
+}
