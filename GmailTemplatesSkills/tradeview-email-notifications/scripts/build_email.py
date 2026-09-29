@@ -443,8 +443,9 @@ def render_more(ctx, more):
 def render_signature(show_help=True):
     email = LOC["support_email"]
     help_ = p(LOC["help"].format(email=f'<a href="mailto:{email}">{email}</a>'), mb=G, color=C["link_support"]) if show_help else ""
+    site = LOC["website_url"]  # el link cambia por idioma; el texto visible siempre es www.tradeviewmarkets.com
     return (f'{help_}{p(LOC["signature"], mb=g, weight=TY["body_bold"]["weight"])}'
-            f'    <p style="margin:0;font-family:{FONT};{fs("body")}text-align:{START};"><a href="https://www.tradeviewmarkets.com" target="_blank" '
+            f'    <p style="margin:0;font-family:{FONT};{fs("body")}text-align:{START};"><a href="{site}" target="_blank" '
             f'style="color:{C["link"]};text-decoration:underline;">www.tradeviewmarkets.com</a></p>\n')
 
 
@@ -457,7 +458,8 @@ def render_footer(ctx, entity, name):
         cells = ""
         for i, s in enumerate(socials):
             pad = "" if i == len(socials) - 1 else f"padding-{END}:{k['social_gap']}px;"
-            cells += (f'<td valign="middle" style="{pad}"><a href="{s["href"]}" target="_blank" style="text-decoration:none;">'
+            href = s.get("href_by_lang", {}).get(LANG, s["href"])  # link propio del idioma, si lo tiene
+            cells += (f'<td valign="middle" style="{pad}"><a href="{href}" target="_blank" style="text-decoration:none;">'
                       f'{img(ctx, s["asset"], k["social"], k["social"], s["alt"], fluid=True, url=s.get("url"))}</a></td>')
         left += table(f"<tr>{cells}</tr>", width=str(k["left_width"]), style=f"width:100%;max-width:{k['left_width']}px;")
     spacer = f'<div style="height:{k["logo_gap"]}px;line-height:{k["logo_gap"]}px;font-size:0;">&nbsp;</div>'

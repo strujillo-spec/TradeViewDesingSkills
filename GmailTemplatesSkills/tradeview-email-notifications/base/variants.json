@@ -1,5 +1,5 @@
 {
-  "_about": "Variantes visuales de header y footer. Cada correo elige una con \"header\" / \"footer\" en su spec (default \"standard\"). El texto legal del footer NO va aquí: sale de locales/<idioma>.json según la entidad (ltd / sac). Para un caso especial (ej. co-branding), agrega una variante nueva y su SVG/PNG en assets/; no edites el correo a mano. Las imágenes con \"url\" ya están en el S3 de Tradeview (las subió desarrollo) y el correo las usa directo; \"asset\" es la copia local de respaldo.",
+  "_about": "Variantes visuales de header y footer. Cada correo elige una con \"header\" / \"footer\" en su spec (default \"standard\"). El texto legal del footer NO va aquí: sale de locales/<idioma>.json según la entidad (ltd / sac). Las redes usan \"href\" en todos los idiomas salvo los que tengan su propio link en \"href_by_lang\". Para un caso especial (ej. co-branding), agrega una variante nueva y su SVG/PNG en assets/; no edites el correo a mano. Las imágenes con \"url\" ya están en el S3 de Tradeview (las subió desarrollo) y el correo las usa directo; \"asset\" es la copia local de respaldo.",
   "header": {
     "standard": {
       "_figma": "Header desktop (node 9178-473): logo a color centrado",
@@ -44,12 +44,14 @@
           "asset": "social-instagram",
           "alt": "Instagram",
           "href": "https://www.instagram.com/tradeviewmarkets/",
+          "href_by_lang": {"ar": "https://www.instagram.com/tradeviewmena/"},
           "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/Icono-Instagram.png"
         },
         {
           "asset": "social-youtube",
           "alt": "YouTube",
           "href": "https://www.youtube.com/channel/UCpPf9pAQj4n28hT65QIzRXA",
+          "href_by_lang": {"ar": "https://www.youtube.com/@tradeviewmena"},
           "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/Icono-Youtube.png"
         },
         {
@@ -62,12 +64,14 @@
           "asset": "social-facebook",
           "alt": "Facebook",
           "href": "https://www.facebook.com/TradeviewMarkets/",
+          "href_by_lang": {"ar": "https://www.facebook.com/TradeviewAr"},
           "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/Icono-Facebook.png"
         },
         {
           "asset": "social-x",
           "alt": "X",
           "href": "https://x.com/Tradeview_",
+          "href_by_lang": {"ar": "https://x.com/TradeViewMena"},
           "url": "https://documents-tradeviewmarkets.s3.us-west-1.amazonaws.com/Archive/mails/Icono-x.png"
         }
       ]
